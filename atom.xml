@@ -6,7 +6,7 @@
   <link href="http://example.com/atom.xml" rel="self"/>
   
   <link href="http://example.com/"/>
-  <updated>2022-07-24T15:20:27.052Z</updated>
+  <updated>2022-07-24T15:25:02.924Z</updated>
   <id>http://example.com/</id>
   
   <author>
@@ -21,9 +21,9 @@
     <link href="http://example.com/2022/07/24/%E7%89%9B%E9%A1%BF%E8%BF%AD%E4%BB%A3%E6%B3%95/"/>
     <id>http://example.com/2022/07/24/%E7%89%9B%E9%A1%BF%E8%BF%AD%E4%BB%A3%E6%B3%95/</id>
     <published>2022-07-24T14:57:05.000Z</published>
-    <updated>2022-07-24T15:20:27.052Z</updated>
+    <updated>2022-07-24T15:25:02.924Z</updated>
     
-    <content type="html"><![CDATA[<h2 id="问题详解"><a href="#问题详解" class="headerlink" title="问题详解"></a>问题详解</h2><p><a href="https://leetcode.cn/problems/sqrtx/">题目链接</a><br>两种方案，二分查找/牛顿迭代法</p><h3 id="二分查找"><a href="#二分查找" class="headerlink" title="二分查找"></a>二分查找</h3><p>局限性比较大，如要求返回类型是浮点数时不适用。</p><h3 id="❤牛顿迭代法"><a href="#❤牛顿迭代法" class="headerlink" title="❤牛顿迭代法"></a>❤牛顿迭代法</h3><p>通过迭代来向目标值进行逼近，详解如下图：<br><img src="/../images/leetcode/newton.jpg" alt="牛顿迭代法" title="牛顿迭代法" loading="lazy"><br>重点：</p><ul><li><code>x1 = (x + a / x) / 2</code></li><li>用<code>r &gt; x / r</code>代替<code>r^2 &gt; x</code>可以防止溢出</li><li><code>long r = x;</code><br>  当<code>r=2^31-1</code>时，<code>r + x / r</code>会溢出哦！<pre><code>class Solution {  public int mySqrt(int x) {      if (x &lt;= 1) return x;      long r = x;      while (r &gt; x / r) { // r^2 &gt; x 防止溢出          r = (r + x / r) / 2;      }      return (int)r;  }}</code></pre></li></ul>]]></content>
+    <content type="html"><![CDATA[<h2 id="问题详解"><a href="#问题详解" class="headerlink" title="问题详解"></a>问题详解</h2><p><a href="https://leetcode.cn/problems/sqrtx/">题目链接</a><br>两种方案，二分查找/牛顿迭代法</p><h3 id="二分查找"><a href="#二分查找" class="headerlink" title="二分查找"></a>二分查找</h3><p>局限性比较大，如要求返回类型是浮点数时不适用。</p><h3 id="❤牛顿迭代法"><a href="#❤牛顿迭代法" class="headerlink" title="❤牛顿迭代法"></a>❤牛顿迭代法</h3><p>通过迭代来向目标值进行逼近，详解如下图：<br><img src="/../images/leetcode/newton.jpg" alt="牛顿迭代法" title="牛顿迭代法" loading="lazy"><br>重点：  </p><ul><li><code>x1 = (x + a / x) / 2</code></li><li>用<code>r &gt; x / r</code>代替<code>r^2 &gt; x</code>可以防止溢出</li><li><code>long r = x;</code><br>  当<code>r=2^31-1</code>时，<code>r + x / r</code>会溢出哦！</li></ul><pre><code>class Solution {    public int mySqrt(int x) {        if (x &lt;= 1) return x;        long r = x;        while (r &gt; x / r) { // r^2 &gt; x 防止溢出            r = (r + x / r) / 2;        }        return (int)r;    }}</code></pre>]]></content>
     
     
     <summary type="html">牛顿迭代法</summary>
