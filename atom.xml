@@ -18,8 +18,8 @@
   
   <entry>
     <title>【力扣69】 x 的平方根</title>
-    <link href="http://cuican.life/2022/07/24/%E7%89%9B%E9%A1%BF%E8%BF%AD%E4%BB%A3%E6%B3%95/"/>
-    <id>http://cuican.life/2022/07/24/%E7%89%9B%E9%A1%BF%E8%BF%AD%E4%BB%A3%E6%B3%95/</id>
+    <link href="http://cuican.life/2022/07/24/leetcode69/"/>
+    <id>http://cuican.life/2022/07/24/leetcode69/</id>
     <published>2022-07-24T14:57:05.000Z</published>
     <updated>2022-07-24T15:25:02.924Z</updated>
     
@@ -39,10 +39,10 @@
   
   <entry>
     <title>【ASP.Net报错】localhost未响应</title>
-    <link href="http://cuican.life/2022/06/08/%E3%80%90ASP-Net%E6%8A%A5%E9%94%99%E3%80%91localhost%E6%9C%AA%E5%93%8D%E5%BA%94/"/>
-    <id>http://cuican.life/2022/06/08/%E3%80%90ASP-Net%E6%8A%A5%E9%94%99%E3%80%91localhost%E6%9C%AA%E5%93%8D%E5%BA%94/</id>
+    <link href="http://cuican.life/2022/06/08/localhost-not-responding/"/>
+    <id>http://cuican.life/2022/06/08/localhost-not-responding/</id>
     <published>2022-06-08T10:42:48.000Z</published>
-    <updated>2022-07-24T15:19:50.980Z</updated>
+    <updated>2022-07-24T15:25:20.199Z</updated>
     
     <content type="html"><![CDATA[<h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p>第一次运行ASP.Net项目，运行成功后打开浏览器访问，显示<strong>localhost花了太长时间进行响应</strong>。</p><h2 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h2><ul><li>首先ping了localhost，发现没什么问题，进一步怀疑是端口问题。  </li><li>之后<code>netstat -an</code>查看端口，发现我要访问的端口状态是LISTENING，也没啥问题。</li><li>最后查了防火墙的入站规则，发现没有记录，所以访问不到该端口。</li></ul><h2 id="问题解决"><a href="#问题解决" class="headerlink" title="问题解决"></a>问题解决</h2><p>防火墙-&gt;高级设置-&gt;入站规则-&gt;新建规则-&gt;规则类型选端口-&gt;协议和端口选择TCP协议和要访问的端口-&gt;随便取个名称，搞定~</p>]]></content>
     
