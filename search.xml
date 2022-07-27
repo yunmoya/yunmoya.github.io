@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>区块链学习网站收集</title>
+      <link href="/2022/07/27/blockchaindoc/"/>
+      <url>/2022/07/27/blockchaindoc/</url>
+      
+        <content type="html"><![CDATA[<h1 id="区块链学习网站收集"><a href="#区块链学习网站收集" class="headerlink" title="区块链学习网站收集"></a>区块链学习网站收集</h1><h2 id="公有链"><a href="#公有链" class="headerlink" title="公有链"></a>公有链</h2><h3 id="以太坊"><a href="#以太坊" class="headerlink" title="以太坊"></a>以太坊</h3><p>以太坊官网：<a href="https://ethereum.org/">https://ethereum.org/</a><br>以太坊Overview：<a href="https://trufflesuite.com/guides/ethereum-overview/">https://trufflesuite.com/guides/ethereum-overview/</a></p><h3 id="智能合约"><a href="#智能合约" class="headerlink" title="智能合约"></a>智能合约</h3><p>Solidity语言：<a href="https://docs.soliditylang.org/en/v0.5.0/">https://docs.soliditylang.org/en/v0.5.0/</a></p><h3 id="Truffle框架"><a href="#Truffle框架" class="headerlink" title="Truffle框架"></a>Truffle框架</h3><p>Truffle官网：<a href="https://trufflesuite.com/">https://trufflesuite.com/</a><br>Truffle入门教程：<a href="https://trufflesuite.com/tutorial/">https://trufflesuite.com/tutorial/</a></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 科研 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 区块链 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>【力扣69】 x 的平方根</title>
       <link href="/2022/07/24/leetcode69/"/>
       <url>/2022/07/24/leetcode69/</url>
@@ -61,10 +86,16 @@
         <content type="html"><![CDATA[<h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>区块链尤其是通过允许利益相关者在一个去中心化的市场上进行互动以完成可信且公平的业务。目前<strong>私有链的局限在于其只适用于联盟内部，其中的数据和资产不能在私有链网络外进行交流</strong>。因此<strong>需要设计一个接口使得私有链中的数据在保证安全的同时能够与外界流通</strong>。</p><h3 id="接口设计挑战"><a href="#接口设计挑战" class="headerlink" title="接口设计挑战"></a>接口设计挑战</h3><ol><li>私有链中的参与者（business）和消费者可能有拜占庭行为，可能会入侵设备并且控制私有链中的联盟决策。</li><li>恶意business可能会优先执行有利可图的服务请求，影响系统公平性。</li><li>来自私有链内部的服务响应可能会泄露，需要保护数据隐私，此类响应数据应只能由请求它的用户可见。<h3 id="contribution"><a href="#contribution" class="headerlink" title="contribution"></a>contribution</h3></li><li>通过公有链+私有链设计去中心化接口，使得两个链之间有互操作性，以支持可信和安全的数据传输。</li><li>设计Consensus on Consensus共识机制，使得数据可以从公网安全并可验证的传到私有链。</li><li>基于签名收集（CoSi）技术设计机制，从私有链的联盟中生成可验证的结果，使得消费者可以安全访问该结果。<h2 id="System-Model"><a href="#System-Model" class="headerlink" title="System Model"></a>System Model</h2></li><li>接收的消息无序或丢失</li><li>Threat Model<ul><li>拜占庭参与者</li><li>针对私有链进行女巫攻击</li><li>针对消费者进行假冒攻击</li><li>敏感信息泄露<h2 id="设计原理和挑战"><a href="#设计原理和挑战" class="headerlink" title="设计原理和挑战"></a>设计原理和挑战</h2><h3 id="接口的两点保证"><a href="#接口的两点保证" class="headerlink" title="接口的两点保证"></a>接口的两点保证</h3></li></ul></li><li><strong>保证安全（Consortium Interface Safety）</strong>：该接口应确保所有真的私有链成员以相同的顺序同意同一组传入的消费者请求。（解决消息无序、拜占庭参与者、假冒攻击）</li><li><strong>保证活性（Consortium Interface Liveness）</strong>：该接口应确保封闭联盟最终会处理并提交所有真的消费者请求。（解决女巫攻击）<h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h3>利用<strong>公有链平台作为接口</strong>支持私有链中的封闭联盟同公网的消费者进行通信。公链的共识算法能够抵抗女巫攻击，且接收到的消费者请求是有序的。<h3 id="组合公私链的挑战"><a href="#组合公私链的挑战" class="headerlink" title="组合公私链的挑战"></a>组合公私链的挑战</h3></li><li>共识信息在两种链上应相互可验证。</li><li>在公链上应对从私有链传出的敏感信息进行数据保护。</li><li>私链中的联盟决策应在客户端可验证。<h2 id="去中心化联盟接口详细设计"><a href="#去中心化联盟接口详细设计" class="headerlink" title="去中心化联盟接口详细设计"></a>去中心化联盟接口详细设计</h2><h3 id="消费者请求传给私有链（两轮共识）"><a href="#消费者请求传给私有链（两轮共识）" class="headerlink" title="消费者请求传给私有链（两轮共识）"></a>消费者请求传给私有链（两轮共识）</h3></li><li>公链上的常规共识<ol><li>消费者通过公链发送请求，这些请求作为一个事务形成用户请求合约（User Request Contract），部署在公链上。</li><li>通过公链平台的挖掘/共识过程（PoW之类的），将“消费者请求”事务提交到账本中的一个区块上。</li><li>一旦一个区块被开采并提交到公共区块链中，这将确保对特定区块及其提交顺序达成共识，因为每个区块都通过其加密哈希值与前一个区块相连。</li></ol></li><li>Consensus on Consensus<br> 两轮共识原因：单公链共识不能保证Consortium Interface Safety（封闭联盟无法获得请求、恶意联盟成员、公链共识可能会导致请求冲突）<br> 原理：<strong>联盟成员加入公链，代表自己称为可信代理</strong></li></ol><h3 id="私有链响应传给消费者"><a href="#私有链响应传给消费者" class="headerlink" title="私有链响应传给消费者"></a>私有链响应传给消费者</h3>]]></content>
       
       
+      <categories>
+          
+          <category> 科研 </category>
+          
+      </categories>
+      
       
         <tags>
             
-            <tag> 区块链 </tag>
+            <tag> 区块链, 论文 </tag>
             
         </tags>
       
