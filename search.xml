@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>truffle初始化程序出现错误</title>
+      <link href="/2022/07/28/truffle-install-error/"/>
+      <url>/2022/07/28/truffle-install-error/</url>
+      
+        <content type="html"><![CDATA[<h1 id="truffle初始化程序出现错误"><a href="#truffle初始化程序出现错误" class="headerlink" title="truffle初始化程序出现错误"></a>truffle初始化程序出现错误</h1><h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>执行<code>truffle unbox pet-shop</code>时报错：</p><pre><code>Error: getaddrinfo ENOENT raw.githubusercontent.com at GetAddrInfoReqWrap.onlookup [as oncomplete] (node:dns:71:26)</code></pre><h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2><p>打开C:\Windows\System32\drivers\etc中的host文件，写入：</p><pre><code>199.232.68.133 raw.githubusercontent.com</code></pre><p>搞定~</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 科研 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 区块链; 科研 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>区块链学习网站收集</title>
       <link href="/2022/07/27/blockchaindoc/"/>
       <url>/2022/07/27/blockchaindoc/</url>
