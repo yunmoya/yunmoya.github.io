@@ -1,0 +1,228 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0078E7"><meta name="author" content="Cuican Li"><meta name="copyright" content="Cuican Li"><meta name="generator" content="Hexo 6.3.0"><meta name="theme" content="hexo-theme-yun"><title>【论文笔记】Gosig A Scalable and High-Performance Byzantine Consensus for Consortium Blockchains | Hexo</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/star-markdown-css@0.4.1/dist/yun/yun-markdown.min.css"><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/prism-theme-vars/base.css"><script src="https://fastly.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>function initScrollReveal() {
+  [".post-card",".markdown-body img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+}
+document.addEventListener("DOMContentLoaded", initScrollReveal);
+document.addEventListener("pjax:success", initScrollReveal);
+</script><link rel="stylesheet" type="text/css" href="https://fastly.jsdelivr.net/npm/katex@latest/dist/katex.min.css"><script defer src="https://fastly.jsdelivr.net/npm/katex@latest/dist/katex.min.js"></script><link rel="stylesheet" type="text/css" href="https://fastly.jsdelivr.net/npm/katex@latest/dist/contrib/copy-tex.min.css"><script defer src="https://fastly.jsdelivr.net/npm/katex@latest/dist/contrib/copy-tex.min.js"></script><script defer src="https://fastly.jsdelivr.net/npm/katex@latest/dist/contrib/auto-render.min.js"></script><script type="module">import { renderKatex } from '/js/utils.js'
+document.addEventListener("DOMContentLoaded", () => {
+  renderKatex({
+    ...{},
+    ...true?.options,
+  });
+});</script><link rel="icon" type="image/svg+xml" href="/yun.svg"><link rel="mask-icon" href="/yun.svg" color="#0078E7"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fastly.jsdelivr.net/npm/" crossorigin><script id="yun-config">
+    window.Yun = {}
+    window.CONFIG = {"hostname":"cuican.life","root":"/","title":"灿的小站","version":"1.10.9","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"搜索...","empty":"找不到您查询的内容: ${query}","hits":"找到 ${hits} 条结果","hits_time":"找到 ${hits} 条结果（用时 ${time} 毫秒）"},"anonymous_image":"https://cdn.yunyoujun.cn/img/avatar/none.jpg","say":{"api":"https://el-bot-api.vercel.app/api/words/young"},"algolia":{"hits":{"per_page":8}},"fireworks":{"colors":null},"waline":{"config":{"enable":true,"serverURL":"https://waline.yunyoujun.cn","comment":true,"visitor":true,"emoji":["https://fastly.jsdelivr.net/gh/walinejs/emojis@latest/bilibili/","https://fastly.jsdelivr.net/gh/walinejs/emojis@latest/weibo/","https://fastly.jsdelivr.net/gh/walinejs/emojis@latest/qq/"],"locale":{"placeholder":"填写邮箱，可以收到回复通知哦～"},"requiredMeta":["nick"],"el":"#waline","lang":"zh-CN"},"cdn":"https://fastly.jsdelivr.net/npm/@waline/client@v2/dist/waline.js","dark":"html.dark"},"vendors":{"host":"https://fastly.jsdelivr.net/npm/","darken":"https://fastly.jsdelivr.net/npm/darken@1.5.0"}};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/hexo-theme-yun.js" type="module"></script><link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml"><link rel="preconnect" href="https://www.google-analytics.com" crossorigin><script async src="https://www.googletagmanager.com/gtag/js?id=G-1LL0D86CY9"></script><script>if (CONFIG.hostname === location.hostname) {
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-1LL0D86CY9');
+}</script><script data-ad-client="ca-pub-2245427233262012" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script><script>(function(){
+  var bp = document.createElement('script');
+  var curProtocol = window.location.protocol.split(':')[0];
+  if (curProtocol === 'https') {
+    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+  }
+  else {
+    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+  }
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(bp, s);
+})();</script><!-- Google Tag Manager --><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M9KWR9L');</script><!-- End Google Tag Manager --><meta name="description" content="为联盟链提出一个安全、低时延高性能的BFT协议Gosig">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【论文笔记】Gosig A Scalable and High-Performance Byzantine Consensus for Consortium Blockchains">
+<meta property="og:url" content="http://cuican.life/2022/09/21/0912-gosig/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="为联盟链提出一个安全、低时延高性能的BFT协议Gosig">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://cuican.life/images/paper/Gosig/gosig_round.png">
+<meta property="og:image" content="http://cuican.life/images/paper/Gosig/notations.png">
+<meta property="og:image" content="http://cuican.life/images/paper/Gosig/eq1.png">
+<meta property="og:image" content="http://cuican.life/images/paper/Gosig/algo1.jpg">
+<meta property="og:image" content="http://cuican.life/images/paper/Gosig/algo2.png">
+<meta property="article:published_time" content="2022-09-21T07:50:43.000Z">
+<meta property="article:modified_time" content="2022-09-21T07:50:43.333Z">
+<meta property="article:author" content="Cuican Li">
+<meta property="article:tag" content="区块链, 论文">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://cuican.life/images/paper/Gosig/gosig_round.png"><script>(function() {
+  if (CONFIG.mode !== 'auto') return
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  const setting = localStorage.getItem('darken-mode') || 'auto'
+  if (setting === 'dark' || (prefersDark && setting !== 'light'))
+    document.documentElement.classList.toggle('dark', true)
+})()</script>
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head><body><script src="https://code.iconify.design/2/2.1.1/iconify.min.js"></script><script>// Define global variable
+IconifyProviders = {
+  // Empty prefix: overwrite default API provider configuration
+  '': {
+    // Use custom API first, use Iconify public API as backup
+    resources: [
+        'https://api.iconify.design',
+    ],
+    // Wait for 1 second before switching API hosts
+    rotate: 1000,
+  },
+};</script><script defer src="https://fastly.jsdelivr.net/npm/animejs@latest"></script><script defer src="/js/ui/fireworks.js" type="module"></script><canvas class="fireworks"></canvas><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js" type="module"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="文章目录"><span class="icon iconify" data-icon="ri:list-ordered"></span></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="站点概览"><span class="icon iconify" data-icon="ri:passport-line"></span></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info fix-top"><a class="site-author-avatar" href="/about/" title="Cuican Li"><img width="96" loading="lazy" src="/images/avatar.jpg" alt="Cuican Li"><span class="site-author-status" title="我offer呢">❓︎</span></a><div class="site-author-name"><a href="/about/">Cuican Li</a></div><span class="site-name">Hexo</span><sub class="site-subtitle"></sub><div class="site-description"></div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="我的主页"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:home-4-line"></span></span></a><div class="site-state-item"><a href="/archives/" title="归档"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:archive-line"></span></span><span class="site-state-item-count">13</span></a></div><div class="site-state-item"><a href="/categories/" title="分类"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:folder-2-line"></span></span><span class="site-state-item-count">4</span></a></div><div class="site-state-item"><a href="/tags/" title="标签"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:price-tag-3-line"></span></span><span class="site-state-item-count">6</span></a></div><a class="site-state-item hty-icon-button" href="/about/#comment" title="留言板"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:clipboard-line"></span></span></a></nav><hr style="margin-bottom:0.5rem"><div class="links-of-author"><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://github.com/yunmoya" title="GitHub" target="_blank" style="color:#6e5494"><span class="icon iconify" data-icon="ri:github-line"></span></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="mailto:li_cuican@163.com" title="E-Mail" target="_blank" style="color:#8E71C1"><span class="icon iconify" data-icon="ri:mail-line"></span></a></div><hr style="margin:0.5rem 1rem"><div class="links"><a class="links-item hty-icon-button" href="/links/" title="我的小伙伴们" style="color:dodgerblue"><span class="icon iconify" data-icon="ri:genderless-line"></span></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><span class="icon iconify" data-icon="ri:contrast-2-line"></span></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Introduction"><span class="toc-number">1.</span> <span class="toc-text">Introduction</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.1.</span> <span class="toc-text">概述</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%B1%E8%AF%86%E5%8D%8F%E8%AE%AE"><span class="toc-number">1.1.1.</span> <span class="toc-text">共识协议</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Gossip%E7%BD%91%E7%BB%9C"><span class="toc-number">1.1.2.</span> <span class="toc-text">Gossip网络</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E7%82%B9"><span class="toc-number">1.1.3.</span> <span class="toc-text">关键点</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Overview"><span class="toc-number">2.</span> <span class="toc-text">Overview</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%B3%BB%E7%BB%9F%E6%A8%A1%E5%9E%8B%E5%92%8C%E5%81%87%E8%AE%BE"><span class="toc-number">2.1.</span> <span class="toc-text">系统模型和假设</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%81%87%E8%AE%BE"><span class="toc-number">2.1.1.</span> <span class="toc-text">假设</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BF%9D%E8%AF%81"><span class="toc-number">2.1.2.</span> <span class="toc-text">保证</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Gosig%E5%8D%8F%E8%AE%AE%E6%A6%82%E8%BF%B0"><span class="toc-number">2.2.</span> <span class="toc-text">Gosig协议概述</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Gosig%E5%8D%8F%E8%AE%AE%E8%AE%BE%E8%AE%A1"><span class="toc-number">3.</span> <span class="toc-text">Gosig协议设计</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B6%88%E6%81%AF%E5%92%8C%E7%8A%B6%E6%80%81%E5%AE%9A%E4%B9%89"><span class="toc-number">3.1.</span> <span class="toc-text">消息和状态定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%98%B6%E6%AE%B51%EF%BC%9A%E5%8C%BA%E5%9D%97%E6%8F%90%E5%87%BA"><span class="toc-number">3.2.</span> <span class="toc-text">阶段1：区块提出</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Proposer%E9%80%89%E6%8B%A9%E6%96%B9%E6%B3%95"><span class="toc-number">3.2.1.</span> <span class="toc-text">Proposer选择方法</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8C%BA%E5%9D%97%E6%8F%90%E5%87%BA"><span class="toc-number">3.2.2.</span> <span class="toc-text">区块提出</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BB%93%E6%9D%9F"><span class="toc-number">3.2.3.</span> <span class="toc-text">结束</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%98%B6%E6%AE%B5%E4%BA%8C%EF%BC%9A%E7%AD%BE%E5%90%8D%E6%94%B6%E9%9B%86"><span class="toc-number">3.3.</span> <span class="toc-text">阶段二：签名收集</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%98%B6%E6%AE%B5%E4%BA%8C%E5%8D%8F%E8%AE%AE"><span class="toc-number">3.3.1.</span> <span class="toc-text">阶段二协议</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96"><span class="toc-number">4.</span> <span class="toc-text">关键性能优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%A0%E8%BE%93%E6%B5%81%E6%B0%B4%E7%BA%BF%EF%BC%9A%E8%A7%A3%E5%86%B3%E6%8C%91%E6%88%982"><span class="toc-number">4.1.</span> <span class="toc-text">传输流水线：解决挑战2</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8F%8B%E5%A5%BD%E7%9A%84%E5%9D%97%E7%BB%93%E6%9E%84"><span class="toc-number">4.1.1.</span> <span class="toc-text">流水线友好的块结构</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%90%84%E9%98%B6%E6%AE%B5%E9%97%B4%E7%9A%84%E6%B5%81%E6%B0%B4%E7%BA%BF"><span class="toc-number">4.1.2.</span> <span class="toc-text">各阶段间的流水线</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BC%82%E6%AD%A5%E7%9A%84%E5%8E%9F%E5%A7%8B%E6%B6%88%E6%81%AF%E4%BC%A0%E6%92%AD"><span class="toc-number">4.1.3.</span> <span class="toc-text">异步的原始消息传播</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BD%AE%E6%AC%A1%E9%97%B4%E7%9A%84%E6%B5%81%E6%B0%B4%E7%BA%BF"><span class="toc-number">4.2.</span> <span class="toc-text">轮次间的流水线</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%BB%E6%84%8F%E9%A1%BA%E5%BA%8F%E7%9A%84%E8%81%9A%E5%90%88%E7%AD%BE%E5%90%8D%EF%BC%9A%E8%A7%A3%E5%86%B3%E6%8C%91%E6%88%983"><span class="toc-number">4.3.</span> <span class="toc-text">任意顺序的聚合签名：解决挑战3</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B"><span class="toc-number">4.3.1.</span> <span class="toc-text">基本流程</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%95%B0%E7%BB%84%E5%8E%8B%E7%BC%A9"><span class="toc-number">4.3.2.</span> <span class="toc-text">数组压缩</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8C%81%E7%BB%AD%E6%80%A7%E5%85%AB%E5%8D%A6"><span class="toc-number">4.4.</span> <span class="toc-text">持续性八卦</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%84%E7%90%86%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5"><span class="toc-number">5.</span> <span class="toc-text">处理特殊情况</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E4%B8%8E%E8%80%85%E5%8A%A0%E5%85%A5%E5%92%8C%E7%A6%BB%E5%BC%80"><span class="toc-number">5.1.</span> <span class="toc-text">参与者加入和离开</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%84%E7%90%86%E6%9A%82%E6%97%B6%E7%9A%84%E5%A4%B1%E8%B4%A5"><span class="toc-number">5.2.</span> <span class="toc-text">处理暂时的失败</span></a></li></ol></li></ol></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article" style="--smc-primary:#0078E7;"><link itemprop="mainEntityOfPage" href="http://cuican.life/2022/09/21/0912-gosig/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="Cuican Li"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="Hexo"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">【论文笔记】Gosig A Scalable and High-Performance Byzantine Consensus for Consortium Blockchains<a class="post-edit-link" href="https://github.com/YunYouJun/yunyoujun.github.io/tree/hexo/source/_posts/0912-gosig.md" target="_blank" title="编辑" rel="noopener"><span class="icon iconify" data-icon="ri:edit-line"></span></a></h1><div class="post-meta"><div class="post-time"><span class="post-meta-item-icon"><span class="icon iconify" data-icon="ri:calendar-line"></span></span> <time title="创建时间：2022-09-21 15:50:43" itemprop="dateCreated datePublished" datetime="2022-09-21T15:50:43+08:00">2022-09-21</time></div><span class="leancloud_visitors" id="/2022/09/21/0912-gosig/" data-flag-title="【论文笔记】Gosig A Scalable and High-Performance Byzantine Consensus for Consortium Blockchains"><span class="post-meta-divider">-</span><span class="post-meta-item-icon" title="阅读次数"><span class="icon iconify" data-icon="ri:eye-line"></span> <span class="leancloud-visitors-count"></span></span></span><span class="post-meta-divider">-</span><a href="#comment"><span class="post-meta-item-icon" title="评论数"><span class="icon iconify" data-icon="ri:chat-3-line"></span> <span class="waline-comment-count" id="/2022/09/21/0912-gosig/"></span></span></a><div class="post-classify"><span class="post-category"> <span class="post-meta-item-icon" style="margin-right:3px;"><span class="icon iconify" data-icon="ri:folder-line"></span></span><span itemprop="about" itemscope itemtype="https://schema.org/Thing"><a class="category-item" href="/categories/%E7%A7%91%E7%A0%94/" style="--text-color:#31383f" itemprop="url" rel="index"><span itemprop="text">科研</span></a></span></span><span class="post-tag"><span class="post-meta-divider">-</span><a class="tag-item" href="/tags/%E5%8C%BA%E5%9D%97%E9%93%BE-%E8%AE%BA%E6%96%87/" style="--text-color:var(--hty-text-color)"><span class="post-meta-item-icon"><span class="icon iconify" data-icon="ri:price-tag-3-line"></span></span><span class="tag-name">区块链, 论文</span></a></span></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body"><h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>提出了一个快速、可扩展、分布式的BFT系统，该系统通过融合协议和底层Gossip网络来解决以下三个挑战：</p>
+<ol>
+<li>单点故障</li>
+<li>有限带宽和高延迟</li>
+<li>最慢节点限制整个处理流程</li>
+</ol>
+<h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><h4 id="共识协议"><a href="#共识协议" class="headerlink" title="共识协议"></a>共识协议</h4><p>Gosig分轮运作，每轮都在区块链上附加一个区块。每轮包括两个阶段：</p>
+<ol>
+<li>区块提出阶段<ol>
+<li>随机选择若干提出者</li>
+<li>每个提出者打包交易到新区块并广播该区块到所有其他节点。</li>
+</ol>
+</li>
+<li>签名收集阶段<ol>
+<li>每个节点选出一个在上阶段收到的区块并投票，为它的决策签名</li>
+<li>不断转发由自己签署并从其他方收到的聚合签名。</li>
+<li>如果一个节点收集了足够的签名，表明没有冲突的区块可以被提交，那么这个节点就会提交一个区块。</li>
+</ol>
+</li>
+</ol>
+<h4 id="Gossip网络"><a href="#Gossip网络" class="headerlink" title="Gossip网络"></a>Gossip网络</h4><p>Gosig使用gossip网络来传播所有消息。共识协议确保同一阶段的消息在gossiping期间能被高效聚合。</p>
+<h4 id="关键点"><a href="#关键点" class="headerlink" title="关键点"></a>关键点</h4><p>为每个新区块<strong>随机选举proposer</strong>来对所有可能的进程进行管道化处理，并使用基于gossip的广播汇总所有签名。<br>优点：</p>
+<ol>
+<li><strong>替换proposer安全且开销小</strong>，可以解决挑战一。<ul>
+<li>利用VRF（可验证随机函数）选举proposer使得选择随机且不可预见。</li>
+<li>消除标准PBFT中开销大的ViewChange。<br>  利用了一个提议者在其选举回合中最多提出一个区块的事实，并通过<strong>在每个提议中携带一个小证明</strong>来证明新提议者的有效性，实现了零开销的提议者替换。该协议在同步回合中进行，在一个回合中最多可以提交一个区块。</li>
+</ul>
+</li>
+<li>优化签名收集，解决挑战三<br> 将多个接收的签名组合到一个等效的聚合签名中并转发该汇总签名。对多签名数据结构进行扩展，以允许任意的签名顺序，这样一组聚合的签名可以在gossip中再次聚集。<br> 签名聚合使签名信息的大小减少了两个数量级，并大大减少了签名收集阶段的总数据传输。更重要的是，这种减少是在所有参与者中均匀实现的，防止任何单节点能力成为瓶颈。</li>
+<li>所有级别的流水线传输<br> 在聚合签名后，投票交换是有延迟限制的，当每个参与者在等待投票进展时，网络带宽没有被充分利用。Gosig在Gossip层和BFT投票层进行流水线处理，以最大限度地提高网络利用率。</li>
+</ol>
+<h2 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h2><p> 每个节点向其他节点转发交易，并在以后按特定顺序将它们打包成区块。所有提交的区块被序列化成区块链，并被复制到所有节点。在区块链中，一个区块通过包含前一个区块的哈希值来扩展链。当且仅当一个区块包含的交易被提交时，该交易才被确认。Gosig作为共识协议来保证所有区块链的副本都是相同的。</p>
+<h3 id="系统模型和假设"><a href="#系统模型和假设" class="headerlink" title="系统模型和假设"></a>系统模型和假设</h3><h4 id="假设"><a href="#假设" class="headerlink" title="假设"></a>假设</h4><ol>
+<li>系统中有超过$N=3f+1$个节点，至多$f$个节点出现拜占庭故障，其他$2f+1$个节点能正确工作。</li>
+<li>节点能通过可信的PKI（公钥基础设施）鉴别其他节点的身份。</li>
+</ol>
+<h4 id="保证"><a href="#保证" class="headerlink" title="保证"></a>保证</h4><ol>
+<li>允许f个有问题的节点被对手自适应地破坏掉。</li>
+<li>保证在异步网络中的安全以及在局部同步网络中的活性</li>
+<li>活性属性还需要一个松散的同步时钟，理论上可以用部分同步假设来建立，在实践中也由网络时间协议（NTP）提供。即使时钟有任意的偏差，也不会影响安全性。Gosig还提供了有效性属性，即所有承诺的事务都遵循一些应用层面的预定义的验证规则。</li>
+</ol>
+<h3 id="Gosig协议概述"><a href="#Gosig协议概述" class="headerlink" title="Gosig协议概述"></a>Gosig协议概述</h3><p>将Gosig的执行分为具<strong>有固定时间长度</strong>的几轮。每轮包含proposer选择阶段（无通信）和随后的两个有固定长度的阶段。因此，所有节点能通过<strong>参考本地时钟得知当前轮数和阶段</strong>。每轮流程如下图所示：<br><img src="/../images/paper/Gosig/gosig_round.png" alt="Gosig round" title="Gosig round" loading="lazy"></p>
+<ol>
+<li>在每一轮的开始时，一些节点通过加密的排序算法（见后文）意识到他们是这一轮的潜在proposer。但它不知道别的潜在proposer。因此，对抗者无法找到proposer（除非随便猜猜到了）。</li>
+<li>阶段1：每个潜在的proposer将非冲突的未提交的交易打包在一个区块提案中，通过gossip分发出去，该proposer之后的行为就像一个正常的节点一样。</li>
+<li>阶段2：通过投票交换在本轮对一些区块提案达成共识。<br>一个节点通过在区块的准备消息（”$P$ message”）中添加自己的数字签名来为该区块投票，然后通过gossip传播该区块。<strong>一个诚信的节点每轮只为一个提案投票</strong>。<br>直到一个区块的$P$ message收到至少$2f+1$个签名时，节点通过在其本地状态中存储消息和轮次，对该块进行暂定提交，并开始 为其发送暂定提交消息（”$TC$ message”）。<br>当该节点收到$2f+1$条$TC$ messages时，将区块提交到它的本地区块链副本上。如果它最终在相同轮次提交区块失败，本地状态会用来决定决定是否接受新的提案，或决定在下一步中提出哪个区块。</li>
+</ol>
+<h2 id="Gosig协议设计"><a href="#Gosig协议设计" class="headerlink" title="Gosig协议设计"></a>Gosig协议设计</h2><h3 id="消息和状态定义"><a href="#消息和状态定义" class="headerlink" title="消息和状态定义"></a>消息和状态定义</h3><p>除了区块链副本外，每个节点还有一个本地状态，并基于这个状态和外部事件（接收一个确切的消息或被选为proposer）决定它的下个动作。<br><img src="/../images/paper/Gosig/notations.png" alt="Notations" title="Notations" loading="lazy"><br>当Gosig开始运行时，节点的本地状态被初始化为$s_i=&lt;null, 0, null&gt;$。当一个区块最终被提交，该区块会被添加到区块链上且节点的本地状态会重置。</p>
+<h3 id="阶段1：区块提出"><a href="#阶段1：区块提出" class="headerlink" title="阶段1：区块提出"></a>阶段1：区块提出</h3><h4 id="Proposer选择方法"><a href="#Proposer选择方法" class="headerlink" title="Proposer选择方法"></a>Proposer选择方法</h4><p>使用VRF来选择一组潜在的proposer。</p>
+<ol>
+<li><p>随机种子$Q^h$<br> <img src="/../images/paper/Gosig/eq1.png" alt="公式1" title="公式1" loading="lazy"><br> $Q^0$是所有节点共享的随机值。</p>
+</li>
+<li><p>proposer分数$L^r(i)$<br> 根据随机种子$Q^h$可得$L^r(i)=H(SIG(r, Q^h))$。$h$是第$r$轮区块链的长度。<br> 若节点的proposer分数小于proposer阈值，那么它就会被选为潜在的proposer。阈值被设置为$7/N$，$N$为节点的总数。在每一轮开始时，每个节点$p_i$计算它的$L^r(i)$，进而得知它是否是本轮潜在的proposer。  </p>
+</li>
+<li><p>潜在proposer证明<br> 根据proposer证明$SIG_i(r, Q^h)$，一个潜在的proposer能向其他节点证明它的proposer状态。这个过程无需和其他节点通信。</p>
+</li>
+</ol>
+<h4 id="区块提出"><a href="#区块提出" class="headerlink" title="区块提出"></a>区块提出</h4><ol>
+<li><p>每个潜在提出者$p_i$决定提出哪个区块，然后生成一个提案消息。如果$p_i$已经暂时提交了一个区块$B_tc$，则$B_tc$将被提出，否则$p_i$会生成一个新区块。</p>
+</li>
+<li><p>潜在的提出者会为提出的区块$B$提供一个提案证书以保证提案的有效性。</p>
+<ul>
+<li>如果提出者选的$B$是$B_tc$，那提案证书是一个$P$-证书。</li>
+<li>如果提出者选的是一个新区块，那提案证书提交到区块链的最后一个区块的$TC$-证书。</li>
+</ul>
+<p> 如表1定义所示，提案证书轮次$c.r$将被用来说服其他已经暂时提交了早期区块的节点重置它们的状态并准备区块B。这个证书至少被$2f+1$给节点签名，因此不可被伪造。</p>
+</li>
+<li><p>最后，潜在提出者$p_i$组装一个$PR$消息，如表1所示。然后$p_i$用私钥为消息签名。<br>每个节点通过检查$PR$消息包含的区块、签名和证书能轻松验证$PR$消息有效性。<br>当节点收到一个提案，它会检查提案的高度是否和节点本地已提交的区块链高度吻合。如果某些已提交的区块在某个节点上丢失，该节点会等到所有丢失区块异步恢复后再投票（恢复流程见下节）。</p>
+</li>
+</ol>
+<h4 id="结束"><a href="#结束" class="headerlink" title="结束"></a>结束</h4><p>在阶段1期间，通过八卦向所有节点广播PR消息。在阶段1末尾（在固定时间后），大多数节点应该都能看见本轮中所有被提出的区块。</p>
+<h3 id="阶段二：签名收集"><a href="#阶段二：签名收集" class="headerlink" title="阶段二：签名收集"></a>阶段二：签名收集</h3><p>目标：分发节点对区块提案投票的签名消息。使用八卦来传播所有消息。</p>
+<h4 id="阶段二协议"><a href="#阶段二协议" class="headerlink" title="阶段二协议"></a>阶段二协议</h4><p>将每个节点$p_i$建模为有限状态机。节点基于它当前的本地状态和输入消息来执行动作。<br><img src="/../images/paper/Gosig/algo1.jpg" alt="算法1" title="算法1" loading="lazy"><br><img src="/../images/paper/Gosig/algo2.png" alt="算法2" title="算法2" loading="lazy"></p>
+<ol>
+<li><p>初始化阶段<br> 节点检查它在阶段1接收的所有区块提案，通过DecideBlock算法（算法2）决定准备哪个区块。<br> 算法2的思想是趋向于选择认证轮次大的区块提案。区块认证轮次大，区块越新。</p>
+</li>
+<li><p>处理输入消息</p>
+<ul>
+<li><p>接收到合法$P_X^r(B)$消息  </p>
+<ul>
+<li>当阶段为$P_{ed}$，且收到的消息中区块为$\bar{B}$：<br>  根据聚合签名$P_X^r(B)$更新$SigP$。<br>  当它从$\bar{B}$的$P$消息中收集了至少$2f+1$个签名后将阶段修改为$TCed$，暂时提交$\bar{B}$到本地。开始八卦签名$SigTC$。</li>
+</ul>
+</li>
+<li><p>接收到合法$TC_X^r(B)$消息</p>
+<ul>
+<li>阶段不为$Init$，且收到的消息中区块为$\bar{B}$：<br>  根据聚合签名$TC_X^r(B)$更新$SigTC$。<br>  当它从$\bar{B}$的$TC$消息中收集了至少$2f+1$个签名后将阶段修改为$Ced$，带着证书$SigTC$提交$\bar{B}$。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p>当区块被提交或者恢复所有已提交区块时，节点的本地状态将重置。</p>
+<h2 id="关键性能优化"><a href="#关键性能优化" class="headerlink" title="关键性能优化"></a>关键性能优化</h2><h3 id="传输流水线：解决挑战2"><a href="#传输流水线：解决挑战2" class="headerlink" title="传输流水线：解决挑战2"></a>传输流水线：解决挑战2</h3><p>允许独立的块和消息交换尽可能地异步运行，以减少节点的等待时长，并利用空闲带宽。</p>
+<h4 id="流水线友好的块结构"><a href="#流水线友好的块结构" class="headerlink" title="流水线友好的块结构"></a>流水线友好的块结构</h4><p>区块由三部分组成：</p>
+<ul>
+<li>header：包含所有元数据，如证书、提案证明</li>
+<li>body：排好序的交易哈希<br>  可以被分段，类似于比特容忍转发文件，允许节点在接收到完整区块body前开始发出数据。<br>  与比特容忍文件不同的是，<strong>提出者在八卦分段之前为每个分段都签了名</strong>。这步很重要，若没有这步的话，对手能生产很多垃圾分段来干扰网络。</li>
+<li>区块中的原始交易</li>
+</ul>
+<h4 id="各阶段间的流水线"><a href="#各阶段间的流水线" class="headerlink" title="各阶段间的流水线"></a>各阶段间的流水线</h4><ol>
+<li>在传播body和原始交易前，八卦网络会先传播区块header<br> 一个节点只需要传播区块头部，其他节点就能根据算法2做选择。原因见算法2第四行和提案者分数计算方法，计算只用到了header里的签名。</li>
+<li>在确保所有节点都收到了headers（阶段1的超时时间确保所有节点收到），开始阶段2</li>
+</ol>
+<p>由于头部很小，因此该优化大幅度减少了阶段1的时间。此外，由于节点更早的接收到了区块header，它们能尽早决定提案者，而不需要浪费带宽去传递其他提案者“没用”的区块内容。</p>
+<h4 id="异步的原始消息传播"><a href="#异步的原始消息传播" class="headerlink" title="异步的原始消息传播"></a>异步的原始消息传播</h4><ul>
+<li>随后八卦网络传播区块体。<br>  body里用6字节短哈希代替32字节的SHA256哈希，除非出现哈希冲突。因此body也比所有原始交易的总和小得多。</li>
+<li>对原始交易进行异步八卦<ul>
+<li>当节点收到了以前没见过的交易，它会将交易传给一些随机节点（默认3个）。</li>
+<li>如果节点在收到原始交易前可能见过该区块的body，它会在节点处理（即暂定提交）之前，从其他随机的节点中检索出丢失的交易的区块。<br>  为找到区块，节点节点将3字节的索引送入区块，而不是6字节的短哈希。这里的优化可以参考<a target="_blank" rel="noopener" href="https://github.com/bitcoin/bips">bips</a>。</li>
+<li>要求节点接收区块body，聚集所有相关的原始交易，并在阶段2更新本地状态和发出TC消息前对原始交易进行验证。</li>
+</ul>
+</li>
+</ul>
+<h3 id="轮次间的流水线"><a href="#轮次间的流水线" class="headerlink" title="轮次间的流水线"></a>轮次间的流水线</h3><pre><code>如果节点是潜在提出者，它在提出新区块后就可以开始下一轮了，不用等别的节点提交。
+</code></pre>
+<h3 id="任意顺序的聚合签名：解决挑战3"><a href="#任意顺序的聚合签名：解决挑战3" class="headerlink" title="任意顺序的聚合签名：解决挑战3"></a>任意顺序的聚合签名：解决挑战3</h3><h4 id="基本流程"><a href="#基本流程" class="headerlink" title="基本流程"></a>基本流程</h4><p>一个节点$p_i$的加密签名包括哈希函数$H$，公钥生成器$G$，私钥$x_i$和公钥$V_i=G^{x_i}$。一个节点用私钥对消息$M$进行签名，即签名$S_i=H(M)^{x_i}$。其他人能通过检查$e(G,S_i) = e(V_i,H(M))$是否成立来验证签名，$e$是一个给定的双线性映射。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/CCCYYY090/article/details/116660613">BLS安全性证明</a></p>
+</blockquote>
+<p>为跟踪收到的签名，在签名中添加了大小为$N$的整数数组$n$。在节点$p_i$对消息签名时（即$S_i=H(M)^{x_i}$），对$S_i$数组$n_{S_i}$的第$i$个元素+1。因此聚合签名为$(S_i,n_{S_i})$。</p>
+<blockquote>
+<p>为什么要跟踪收到的签名？<br>我的理解：采用Gossip协议无法确定已聚合的签名来自哪里，有可能存在来自自己的签名，导致一个节点对一个信息进行了多次签名。因此需要用一个数组来记录这个节点对消息进行了多少次签名。此外，可以通过判断数组不为0的元素个数来确定有多少节点对该消息进行了签名。<br>具体详见《Keeping Authorities “Honest or Bust” with Decentralized Witness Cosigning》的IV.E</p>
+</blockquote>
+<p>聚合签名通过将BLS签名相乘和数组n相加实现，即聚合签名为$S=H(M)^{\sum_{i}{x_i·n_s{[i]}}}$。假设有两个聚合签名$(S_1,n_{S_1})$和$(S_2,n_{S_2})$，将两个签名合并为$(S_1*S_2, n_{S_1}+n_{S_2})$。因此聚合签名验证方法为判断$e(G,S)=e(\prod_i{V_i^{n_S[i]}, H(M)})$是否成立。</p>
+<h4 id="数组压缩"><a href="#数组压缩" class="headerlink" title="数组压缩"></a>数组压缩</h4><ol>
+<li>使用变长整数编码来编码，将大多数元素的大小缩减到2位</li>
+<li>如果签名的人不多（数组里有好多0），Gosig利用稀疏性将其编码在一个map中</li>
+<li>进一步进行整数数组压缩[34]</li>
+</ol>
+<h3 id="持续性八卦"><a href="#持续性八卦" class="headerlink" title="持续性八卦"></a>持续性八卦</h3><p>每个节点向在阶段2有限个随机邻居（默认5个）发送P消息或TC消息，有限的连接帮助避免转发签名过于激进而失去聚合机会。<br>如果一些签名没有被及时处理，那么节点会把消息放在栈里。之所以用栈而不是队列，是因为消息到达的越晚意味着消息包含更多的签名。</p>
+<h2 id="处理特殊情况"><a href="#处理特殊情况" class="headerlink" title="处理特殊情况"></a>处理特殊情况</h2><h3 id="参与者加入和离开"><a href="#参与者加入和离开" class="headerlink" title="参与者加入和离开"></a>参与者加入和离开</h3><p>存在的节点会在提交交易是更新他们子集的参与者列表。</p>
+<h3 id="处理暂时的失败"><a href="#处理暂时的失败" class="headerlink" title="处理暂时的失败"></a>处理暂时的失败</h3><p>如果一个节点数据丢失/崩溃，它应该查询所有丢失的区块和证明。它只有恢复完整的历史记录后才能继续参加投票。<br>如果节点探测到他的邻居有连接问题，它会在$T_o$（一般是一轮投票的一半时间）期间暂停对该邻居发送消息。若过了这段时间后还是连接失败，它会动态增加$T_o$。这个过程一直重复到它收到了该邻居的消息。这个机制有效的限制了因尝试连接失效节点导致的浪费。</p>
+</div></section><div id="reward-container"><span class="hty-icon-button button-glow" id="reward-button" title="打赏" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === &quot;none&quot;) ? &quot;block&quot; : &quot;none&quot;;"><span class="icon iconify" data-icon="ri:hand-coin-line"></span></span><div id="reward-comment">I'm so cute. Please give me money.</div></div><ul class="post-copyright"><li class="post-copyright-author"><strong>本文作者：</strong>Cuican Li</li><li class="post-copyright-link"><strong>本文链接：</strong><a href="http://cuican.life/2022/09/21/0912-gosig/" title="【论文笔记】Gosig A Scalable and High-Performance Byzantine Consensus for Consortium Blockchains">http://cuican.life/2022/09/21/0912-gosig/</a></li><li class="post-copyright-license"><strong>版权声明：</strong>本博客所有文章除特别声明外，均默认采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><span class="icon iconify" data-icon="ri:creative-commons-line"></span><span class="icon iconify" data-icon="ri:creative-commons-by-line"></span><span class="icon iconify" data-icon="ri:creative-commons-nc-line"></span><span class="icon iconify" data-icon="ri:creative-commons-sa-line"></span></a> 许可协议。</li></ul></article><div class="post-nav"><div class="post-nav-item"><a class="post-nav-prev" href="/2022/09/21/Interfacing/" rel="prev" title="【论文笔记】Leveraging Public-Private Blockchain Interoperability for Closed Consortium Interfacing"><span class="icon iconify" data-icon="ri:arrow-left-s-line"></span><span class="post-nav-text">【论文笔记】Leveraging Public-Private Blockchain Interoperability for Closed Consortium Interfacing</span></a></div><div class="post-nav-item"><a class="post-nav-next" href="/2022/09/10/0904-jvm/" rel="next" title="【知识记录】JVM知识记录（上）"><span class="post-nav-text">【知识记录】JVM知识记录（上）</span><span class="icon iconify" data-icon="ri:arrow-right-s-line"></span></a></div></div></div><div class="hty-card" id="comment"><div id="waline"></div><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@waline/client@v2/dist/waline.css"><script>window.CONFIG.waline.config.path = "/2022/09/21/0912-gosig/"</script><div class="js-Pjax"><script src="/js/comments/waline.js" type="module" defer></script></div></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2019 – 2023 </span><span class="with-love" id="animate"><span class="icon iconify" data-icon="ri:cloud-line"></span></span><span class="author"> Cuican Li</span></div><div class="powered"><span>由 <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> 驱动 v6.3.0</span><span class="footer-separator">|</span><span>主题 - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.10.9</span></div></footer></div><a class="hty-icon-button" id="back-to-top" aria-label="back-to-top" href="#"><span class="icon iconify" data-icon="ri:arrow-up-s-line"></span><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#0078E7" stroke-width="2" stroke-linecap="round"></circle></svg></a><a class="popup-trigger hty-icon-button icon-search" id="search" href="javascript:;" title="搜索"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:search-line"></span></span></a><script>window.addEventListener("DOMContentLoaded", () => {
+  // Handle and trigger popup window
+  document.querySelector(".popup-trigger").addEventListener("click", () => {
+    document.querySelector(".popup").classList.add("show");
+    setTimeout(() => {
+      document.querySelector(".search-input").focus();
+    }, 100);
+  });
+
+  // Monitor main search box
+  const onPopupClose = () => {
+    document.querySelector(".popup").classList.remove("show");
+  };
+
+  document.querySelector(".popup-btn-close").addEventListener("click", () => {
+    onPopupClose();
+  });
+
+  window.addEventListener("keyup", event => {
+    if (event.key === "Escape") {
+      onPopupClose();
+    }
+  });
+});
+</script><script defer src="https://fastly.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script><script defer src="https://fastly.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script><script defer src="/js/search/algolia-search.js" type="module"></script><div class="popup search-popup"><div class="search-header"><span class="popup-btn-close close-icon hty-icon-button"><span class="icon iconify" data-icon="ri:close-line"></span></span></div><div class="search-input-container"></div><div class="algolia-results"><div id="algolia-stats"></div><div id="algolia-hits"></div><div class="algolia-pagination" id="algolia-pagination"></div></div></div><script src="https://fastly.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js"></script><script>const images = [...document.querySelectorAll('.markdown-body img')]
+mediumZoom(images)</script><style>.medium-zoom-image {
+  z-index: 99;
+}</style></body></html>

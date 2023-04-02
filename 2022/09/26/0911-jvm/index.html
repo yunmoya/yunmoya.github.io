@@ -1,0 +1,511 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0078E7"><meta name="author" content="Cuican Li"><meta name="copyright" content="Cuican Li"><meta name="generator" content="Hexo 6.3.0"><meta name="theme" content="hexo-theme-yun"><title>【知识记录】JVM知识记录（中） | Hexo</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/star-markdown-css@0.4.1/dist/yun/yun-markdown.min.css"><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/prism-theme-vars/base.css"><script src="https://fastly.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>function initScrollReveal() {
+  [".post-card",".markdown-body img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+}
+document.addEventListener("DOMContentLoaded", initScrollReveal);
+document.addEventListener("pjax:success", initScrollReveal);
+</script><link rel="icon" type="image/svg+xml" href="/yun.svg"><link rel="mask-icon" href="/yun.svg" color="#0078E7"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fastly.jsdelivr.net/npm/" crossorigin><script id="yun-config">
+    window.Yun = {}
+    window.CONFIG = {"hostname":"cuican.life","root":"/","title":"灿的小站","version":"1.10.9","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"搜索...","empty":"找不到您查询的内容: ${query}","hits":"找到 ${hits} 条结果","hits_time":"找到 ${hits} 条结果（用时 ${time} 毫秒）"},"anonymous_image":"https://cdn.yunyoujun.cn/img/avatar/none.jpg","say":{"api":"https://el-bot-api.vercel.app/api/words/young"},"algolia":{"hits":{"per_page":8}},"fireworks":{"colors":null},"waline":{"config":{"enable":true,"serverURL":"https://waline.yunyoujun.cn","comment":true,"visitor":true,"emoji":["https://fastly.jsdelivr.net/gh/walinejs/emojis@latest/bilibili/","https://fastly.jsdelivr.net/gh/walinejs/emojis@latest/weibo/","https://fastly.jsdelivr.net/gh/walinejs/emojis@latest/qq/"],"locale":{"placeholder":"填写邮箱，可以收到回复通知哦～"},"requiredMeta":["nick"],"el":"#waline","lang":"zh-CN"},"cdn":"https://fastly.jsdelivr.net/npm/@waline/client@v2/dist/waline.js","dark":"html.dark"},"vendors":{"host":"https://fastly.jsdelivr.net/npm/","darken":"https://fastly.jsdelivr.net/npm/darken@1.5.0"}};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/hexo-theme-yun.js" type="module"></script><link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml"><link rel="preconnect" href="https://www.google-analytics.com" crossorigin><script async src="https://www.googletagmanager.com/gtag/js?id=G-1LL0D86CY9"></script><script>if (CONFIG.hostname === location.hostname) {
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-1LL0D86CY9');
+}</script><script data-ad-client="ca-pub-2245427233262012" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script><script>(function(){
+  var bp = document.createElement('script');
+  var curProtocol = window.location.protocol.split(':')[0];
+  if (curProtocol === 'https') {
+    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+  }
+  else {
+    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+  }
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(bp, s);
+})();</script><!-- Google Tag Manager --><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M9KWR9L');</script><!-- End Google Tag Manager --><meta name="description" content="运行时数据区（程序计数器、虚拟机栈、本地方法栈、堆、方法区）、本地方法接口和本地方法库">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【知识记录】JVM知识记录（中）">
+<meta property="og:url" content="http://cuican.life/2022/09/26/0911-jvm/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="运行时数据区（程序计数器、虚拟机栈、本地方法栈、堆、方法区）、本地方法接口和本地方法库">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://cuican.life/images/knowledge/jvm/JVM%E7%BB%8F%E5%85%B8%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80.png">
+<meta property="og:image" content="http://cuican.life/images/knowledge/jvm/PC%E5%AF%84%E5%AD%98%E5%99%A8%E6%84%8F%E4%B9%89.png">
+<meta property="og:image" content="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88%E6%BC%94%E7%A4%BA.png">
+<meta property="og:image" content="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/%E5%A0%86%E4%B8%8Ejava%E6%A0%88.png">
+<meta property="og:image" content="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/TLAB%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D.png">
+<meta property="og:image" content="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/%E6%A0%87%E9%87%8F%E6%9B%BF%E6%8D%A2%E5%89%8D.png">
+<meta property="og:image" content="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/%E6%A0%87%E9%87%8F%E6%9B%BF%E6%8D%A2%E5%90%8E.png">
+<meta property="og:image" content="http://cuican.life/image/%E6%96%B9%E6%B3%95%E5%8C%BA%E8%AF%B4%E6%98%8E.png">
+<meta property="article:published_time" content="2022-09-26T15:46:39.000Z">
+<meta property="article:modified_time" content="2022-10-04T08:12:14.052Z">
+<meta property="article:author" content="Cuican Li">
+<meta property="article:tag" content="后端">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://cuican.life/images/knowledge/jvm/JVM%E7%BB%8F%E5%85%B8%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80.png"><script>(function() {
+  if (CONFIG.mode !== 'auto') return
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  const setting = localStorage.getItem('darken-mode') || 'auto'
+  if (setting === 'dark' || (prefersDark && setting !== 'light'))
+    document.documentElement.classList.toggle('dark', true)
+})()</script>
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head><body><script src="https://code.iconify.design/2/2.1.1/iconify.min.js"></script><script>// Define global variable
+IconifyProviders = {
+  // Empty prefix: overwrite default API provider configuration
+  '': {
+    // Use custom API first, use Iconify public API as backup
+    resources: [
+        'https://api.iconify.design',
+    ],
+    // Wait for 1 second before switching API hosts
+    rotate: 1000,
+  },
+};</script><script defer src="https://fastly.jsdelivr.net/npm/animejs@latest"></script><script defer src="/js/ui/fireworks.js" type="module"></script><canvas class="fireworks"></canvas><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js" type="module"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="文章目录"><span class="icon iconify" data-icon="ri:list-ordered"></span></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="站点概览"><span class="icon iconify" data-icon="ri:passport-line"></span></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info fix-top"><a class="site-author-avatar" href="/about/" title="Cuican Li"><img width="96" loading="lazy" src="/images/avatar.jpg" alt="Cuican Li"><span class="site-author-status" title="我offer呢">❓︎</span></a><div class="site-author-name"><a href="/about/">Cuican Li</a></div><span class="site-name">Hexo</span><sub class="site-subtitle"></sub><div class="site-description"></div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="我的主页"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:home-4-line"></span></span></a><div class="site-state-item"><a href="/archives/" title="归档"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:archive-line"></span></span><span class="site-state-item-count">13</span></a></div><div class="site-state-item"><a href="/categories/" title="分类"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:folder-2-line"></span></span><span class="site-state-item-count">4</span></a></div><div class="site-state-item"><a href="/tags/" title="标签"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:price-tag-3-line"></span></span><span class="site-state-item-count">6</span></a></div><a class="site-state-item hty-icon-button" href="/about/#comment" title="留言板"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:clipboard-line"></span></span></a></nav><hr style="margin-bottom:0.5rem"><div class="links-of-author"><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://github.com/yunmoya" title="GitHub" target="_blank" style="color:#6e5494"><span class="icon iconify" data-icon="ri:github-line"></span></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="mailto:li_cuican@163.com" title="E-Mail" target="_blank" style="color:#8E71C1"><span class="icon iconify" data-icon="ri:mail-line"></span></a></div><hr style="margin:0.5rem 1rem"><div class="links"><a class="links-item hty-icon-button" href="/links/" title="我的小伙伴们" style="color:dodgerblue"><span class="icon iconify" data-icon="ri:genderless-line"></span></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><span class="icon iconify" data-icon="ri:contrast-2-line"></span></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E6%A6%82%E8%BF%B0%E5%8F%8A%E7%BA%BF%E7%A8%8B"><span class="toc-number">1.</span> <span class="toc-text">运行时数据区概述及线程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.1.</span> <span class="toc-text">概述</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#JVM%E7%BB%8F%E5%85%B8%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80"><span class="toc-number">1.1.1.</span> <span class="toc-text">JVM经典内存布局</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Runtime%E7%B1%BB"><span class="toc-number">1.1.2.</span> <span class="toc-text">Runtime类</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B"><span class="toc-number">1.2.</span> <span class="toc-text">线程</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8%EF%BC%88PC%E5%AF%84%E5%AD%98%E5%99%A8%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">程序计数器（PC寄存器）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%8B%E7%BB%8D"><span class="toc-number">2.1.</span> <span class="toc-text">介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BE%E4%BE%8B"><span class="toc-number">2.2.</span> <span class="toc-text">举例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%9D%A4%E4%B8%A4%E4%B8%AA%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98"><span class="toc-number">2.3.</span> <span class="toc-text">❤两个常见问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8PC%E5%AF%84%E5%AD%98%E5%99%A8%E5%AD%98%E5%82%A8%E5%AD%97%E8%8A%82%E7%A0%81%E6%8C%87%E4%BB%A4%E5%9C%B0%E5%9D%80%E6%9C%89%E4%BB%80%E4%B9%88%E7%94%A8%E5%91%A2%EF%BC%9F-x2F-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8PC%E5%AF%84%E5%AD%98%E5%99%A8%E8%AE%B0%E5%BD%95%E5%BD%93%E5%89%8D%E7%BA%BF%E7%A8%8B%E7%9A%84%E6%89%A7%E8%A1%8C%E5%9C%B0%E5%9D%80%E5%91%A2%EF%BC%9F"><span class="toc-number">2.3.1.</span> <span class="toc-text">使用PC寄存器存储字节码指令地址有什么用呢？&#x2F;为什么使用PC寄存器记录当前线程的执行地址呢？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#PC%E5%AF%84%E5%AD%98%E5%99%A8%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E8%A2%AB%E8%AE%BE%E5%AE%9A%E4%B8%BA%E7%BA%BF%E7%A8%8B%E7%A7%81%E6%9C%89%EF%BC%9F"><span class="toc-number">2.3.2.</span> <span class="toc-text">PC寄存器为什么会被设定为线程私有？</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%9D%A4%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88"><span class="toc-number">3.</span> <span class="toc-text">❤虚拟机栈</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0-1"><span class="toc-number">3.1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%88%E7%9A%84%E5%9F%BA%E6%9C%AC%E7%BB%93%E6%9E%84%E5%92%8C%E8%BF%90%E8%A1%8C%E5%8E%9F%E7%90%86"><span class="toc-number">3.2.</span> <span class="toc-text">栈的基本结构和运行原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%9D%A4%E6%A0%88%E7%9A%84%E7%9B%B8%E5%85%B3%E9%9D%A2%E8%AF%95%E9%A2%98"><span class="toc-number">3.3.</span> <span class="toc-text">❤栈的相关面试题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%A0%88"><span class="toc-number">4.</span> <span class="toc-text">本地方法栈</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%A0%86"><span class="toc-number">5.</span> <span class="toc-text">堆</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E6%A6%82%E8%BF%B0"><span class="toc-number">5.1.</span> <span class="toc-text">核心概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AE%E5%A0%86%E5%86%85%E5%AD%98%E5%A4%A7%E5%B0%8F%E4%B8%8EOOM"><span class="toc-number">5.2.</span> <span class="toc-text">设置堆内存大小与OOM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%9D%A4%E4%B8%BA%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D%E5%86%85%E5%AD%98%EF%BC%9ATLAB"><span class="toc-number">5.3.</span> <span class="toc-text">❤为对象分配内存：TLAB</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9D%A2%E8%AF%95%E9%A2%98%EF%BC%9A%E5%A0%86%E7%A9%BA%E9%97%B4%E4%B8%80%E5%AE%9A%E6%98%AF%E5%85%B1%E4%BA%AB%E7%9A%84%E5%90%97%EF%BC%9F"><span class="toc-number">5.3.1.</span> <span class="toc-text">面试题：堆空间一定是共享的吗？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%9D%A4%E5%A0%86%E7%A9%BA%E9%97%B4%E7%9A%84%E5%8F%82%E6%95%B0%E8%AE%BE%E7%BD%AE"><span class="toc-number">5.4.</span> <span class="toc-text">❤堆空间的参数设置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A0%86%E5%86%85%E5%AD%98%E8%AF%8A%E6%96%AD"><span class="toc-number">5.5.</span> <span class="toc-text">堆内存诊断</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A0%86%E6%98%AF%E5%88%86%E9%85%8D%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E7%9A%84%E5%94%AF%E4%B8%80%E9%80%89%E6%8B%A9%E5%90%97%EF%BC%9F"><span class="toc-number">5.6.</span> <span class="toc-text">堆是分配对象存储的唯一选择吗？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%83%E9%80%B8%E5%88%86%E6%9E%90"><span class="toc-number">5.6.1.</span> <span class="toc-text">逃逸分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%83%E9%80%B8%E5%88%86%E6%9E%90%EF%BC%9A%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96"><span class="toc-number">5.6.2.</span> <span class="toc-text">逃逸分析：代码优化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A0%88%E4%B8%8A%E5%88%86%E9%85%8D"><span class="toc-number">5.6.2.1.</span> <span class="toc-text">栈上分配</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%90%8C%E6%AD%A5%E7%9C%81%E7%95%A5%EF%BC%88%E9%94%81%E6%B6%88%E9%99%A4%EF%BC%89"><span class="toc-number">5.6.2.2.</span> <span class="toc-text">同步省略（锁消除）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%86%E7%A6%BB%E5%AF%B9%E8%B1%A1%E6%88%96%E6%A0%87%E9%87%8F%E6%9B%BF%E6%8D%A2"><span class="toc-number">5.6.2.3.</span> <span class="toc-text">分离对象或标量替换</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E5%8C%BA"><span class="toc-number">6.</span> <span class="toc-text">方法区</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89"><span class="toc-number">6.1.</span> <span class="toc-text">定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E9%97%AE%E9%A2%98-OOM"><span class="toc-number">6.2.</span> <span class="toc-text">内存溢出问题 OOM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E6%95%B0"><span class="toc-number">6.3.</span> <span class="toc-text">参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0"><span class="toc-number">6.4.</span> <span class="toc-text">运行时常量池</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#StringTable%EF%BC%88%E4%B8%B2%E6%B1%A0%EF%BC%89"><span class="toc-number">6.4.1.</span> <span class="toc-text">StringTable（串池）</span></a></li></ol></li></ol></li></ol></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article" style="--smc-primary:#0078E7;"><link itemprop="mainEntityOfPage" href="http://cuican.life/2022/09/26/0911-jvm/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="Cuican Li"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="Hexo"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">【知识记录】JVM知识记录（中）<a class="post-edit-link" href="https://github.com/YunYouJun/yunyoujun.github.io/tree/hexo/source/_posts/0911-jvm.md" target="_blank" title="编辑" rel="noopener"><span class="icon iconify" data-icon="ri:edit-line"></span></a></h1><div class="post-meta"><div class="post-time"><span class="post-meta-item-icon"><span class="icon iconify" data-icon="ri:calendar-line"></span></span> <time title="创建时间：2022-09-26 23:46:39" itemprop="dateCreated datePublished" datetime="2022-09-26T23:46:39+08:00">2022-09-26</time><span class="post-meta-divider">-</span><span class="post-meta-item-icon"><span class="icon iconify" data-icon="ri:calendar-2-line"></span></span> <time title="修改时间：2022-10-04 16:12:14" itemprop="dateModified" datetime="2022-10-04T16:12:14+08:00">2022-10-04</time></div><span class="leancloud_visitors" id="/2022/09/26/0911-jvm/" data-flag-title="【知识记录】JVM知识记录（中）"><span class="post-meta-divider">-</span><span class="post-meta-item-icon" title="阅读次数"><span class="icon iconify" data-icon="ri:eye-line"></span> <span class="leancloud-visitors-count"></span></span></span><span class="post-meta-divider">-</span><a href="#comment"><span class="post-meta-item-icon" title="评论数"><span class="icon iconify" data-icon="ri:chat-3-line"></span> <span class="waline-comment-count" id="/2022/09/26/0911-jvm/"></span></span></a><div class="post-classify"><span class="post-category"> <span class="post-meta-item-icon" style="margin-right:3px;"><span class="icon iconify" data-icon="ri:folder-line"></span></span><span itemprop="about" itemscope itemtype="https://schema.org/Thing"><a class="category-item" href="/categories/%E7%9F%A5%E8%AF%86/" style="--text-color:#fedd89" itemprop="url" rel="index"><span itemprop="text">知识</span></a></span></span><span class="post-tag"><span class="post-meta-divider">-</span><a class="tag-item" href="/tags/%E5%90%8E%E7%AB%AF/" style="--text-color:#fedd89"><span class="post-meta-item-icon"><span class="icon iconify" data-icon="ri:price-tag-3-line"></span></span><span class="tag-name">后端</span></a></span></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body"><h1 id="运行时数据区概述及线程"><a href="#运行时数据区概述及线程" class="headerlink" title="运行时数据区概述及线程"></a>运行时数据区概述及线程</h1><h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>流程回顾：.class文件-&gt;类加载子系统-&gt;<strong>运行时数据区</strong>-&gt;执行引擎  </p>
+<h3 id="JVM经典内存布局"><a href="#JVM经典内存布局" class="headerlink" title="JVM经典内存布局"></a>JVM经典内存布局</h3><p><img src="/../images/knowledge/jvm/JVM%E7%BB%8F%E5%85%B8%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80.png" alt="JVM经典内存布局" title="JVM经典内存布局" loading="lazy"> </p>
+<ul>
+<li>本地方法栈、虚拟机栈、程序计数器：<br>一个线程对应一份，为线程私有</li>
+<li>堆区、方法区：<br>一个虚拟机对应一份，由多个线程共享</li>
+</ul>
+<h3 id="Runtime类"><a href="#Runtime类" class="headerlink" title="Runtime类"></a>Runtime类</h3><p>单例的，一个虚拟机中只有一个实例，即运行时环境，相当于内存结构中的运行时数据区</p>
+<h2 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h2><ul>
+<li>JVM允许一个应用有多个线程并行执行</li>
+<li>HotSpot JVM里，每个线程都与OS的本地线程直接映射</li>
+<li>一旦本地化线程初始化成功（建立程序计数器、栈等），本地线程就会调用Java线程中的run()方法。Java线程执行终止后，本地线程也会回收。</li>
+</ul>
+<h1 id="程序计数器（PC寄存器）"><a href="#程序计数器（PC寄存器）" class="headerlink" title="程序计数器（PC寄存器）"></a>程序计数器（PC寄存器）</h1><h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p><strong>是什么：</strong> JVM的PC寄存器是对物理PC寄存器的一种抽象模拟，用于<strong>存储指令相关的现场信息</strong>。<br><strong>作用：</strong> 用来<strong>存储指向下一条指令的地址</strong>。由执行引擎读取下一条指令。<br><strong>生命周期：</strong> 线程私有，与线程的生命周期保持一致。<br><strong>具体描述：</strong> 任何时间一个线程只有一个方法在执行，即当前方法。PC寄存器会存储<strong>当前线程正在执行的Java方法</strong>的JVM指令地址；如果正在执行native方法（用C/C++写的方法），则是未指定值（undefined）。<br><strong>其他</strong>：是唯一一个JVM规范中没有规定任何内存溢出（OutOfMemoryError，OOM）情况的区域。</p>
+<h2 id="举例"><a href="#举例" class="headerlink" title="举例"></a>举例</h2><p><img src="/../images/knowledge/jvm/PC%E5%AF%84%E5%AD%98%E5%99%A8%E6%84%8F%E4%B9%89.png" alt="PC寄存器意义" title="PC寄存器意义" loading="lazy"> </p>
+<h2 id="❤两个常见问题"><a href="#❤两个常见问题" class="headerlink" title="❤两个常见问题"></a>❤两个常见问题</h2><h3 id="使用PC寄存器存储字节码指令地址有什么用呢？-x2F-为什么使用PC寄存器记录当前线程的执行地址呢？"><a href="#使用PC寄存器存储字节码指令地址有什么用呢？-x2F-为什么使用PC寄存器记录当前线程的执行地址呢？" class="headerlink" title="使用PC寄存器存储字节码指令地址有什么用呢？/为什么使用PC寄存器记录当前线程的执行地址呢？"></a>使用PC寄存器存储字节码指令地址有什么用呢？/为什么使用PC寄存器记录当前线程的执行地址呢？</h3><p>因为CPU需要不停的切换各个线程，切换回来以后就得知道接着从哪开始继续执行。<br>JVM的字节码解释器就需要通过改变PC寄存器的值来明确下一条应该执行什么样的字节码指令。</p>
+<h3 id="PC寄存器为什么会被设定为线程私有？"><a href="#PC寄存器为什么会被设定为线程私有？" class="headerlink" title="PC寄存器为什么会被设定为线程私有？"></a>PC寄存器为什么会被设定为线程私有？</h3><p>为了能够准确地记录各个线程正在执行的当前字节码指令地址，最好的办法自然是为每个线程都分配一个PC寄存器，从而不会出现各线程之间互相干扰的情况。</p>
+<h1 id="❤虚拟机栈"><a href="#❤虚拟机栈" class="headerlink" title="❤虚拟机栈"></a>❤虚拟机栈</h1><h2 id="概述-1"><a href="#概述-1" class="headerlink" title="概述"></a>概述</h2><p>栈是运行时的单位，堆是存储的单位<br><strong>是什么：</strong> Java虚拟机栈，早期也叫Java栈。每个线程在创建时都会创建一个虚拟机栈，<strong>其内部保存一个个栈帧，对应着一次次的Java方法调用</strong>。<br><strong>作用：</strong> 主管Java程序运行，它保存方法的局部变量（8种基本数据类型、引用类型变量对应对象的引用地址）、部分结果，并参与方法的调用和返回。<br><strong>生命周期：</strong> 与线程相同。<br><strong>特点：</strong>   </p>
+<ul>
+<li>栈是一种快速有效的分配存储方式，访问速度仅次于程序计数器</li>
+<li>JVM直接对Java栈的操作只有两个：<ul>
+<li>每个方法执行，伴随着<strong>进栈</strong></li>
+<li>执行结束后的<strong>出栈</strong>工作</li>
+</ul>
+</li>
+<li>栈不存在垃圾回收问题  <img src="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88%E6%BC%94%E7%A4%BA.png" alt="虚拟机栈演示" width="100" align="middle" loading="lazy"></li>
+</ul>
+<p><strong>栈可能出现的异常：</strong><br>Java栈的大小是动态或固定不变的</p>
+<ul>
+<li>StackOverflowError：线程请求分配的栈容量超过Java虚拟机栈允许的最大容量。</li>
+<li>OutOfMemoryError：虚拟机栈在尝试扩展时无法申请到足够的内存，或在创建新线程时没有足够的内存去创建对应的虚拟机栈，JVM会抛出该异常。</li>
+</ul>
+<p><strong>设置栈的内存大小：</strong><br>使用参数-Xss来设置线程的最大栈空间，栈的大小直接决定了函数调用的最大可达深度。<br><strong>其他：</strong> 存在OOM问题。</p>
+<h2 id="栈的基本结构和运行原理"><a href="#栈的基本结构和运行原理" class="headerlink" title="栈的基本结构和运行原理"></a>栈的基本结构和运行原理</h2><p><strong>栈的结构</strong> </p>
+<ul>
+<li>在一条活动线程中，一个时间点上，只会有一个活动的栈帧。即只有当前正在执行的方法的栈帧（栈顶栈帧）是有效的，这个栈帧被称为<strong>当前栈帧</strong>，与当前栈帧相对应的方法就是<strong>当前方法</strong>，定义这个方法的类就是<strong>当前类</strong>。  </li>
+<li>如果在当前方法中调用了其他方法，对应的新的栈帧会被创建出来，放在栈顶，成为新的当前帧。</li>
+</ul>
+<p><strong>栈运行原理</strong>  </p>
+<ul>
+<li>不同线程中所包含的栈帧不允许互相引用</li>
+<li>如果当前方法调用了其他方法，方法返回之际，当前栈帧会传回此方法的执行结果给前一个栈帧，接着，JVM会丢弃当前栈帧，使得前一个栈帧重新成为当前栈帧。</li>
+<li>方法的两种结束方式：正常函数返回（return）和抛出异常（throw Exception，异常会抛给前一个栈帧）。两种结束方式都会导致栈帧被弹出。</li>
+</ul>
+<p><strong>❤栈帧的内部结构（五部分）</strong></p>
+<ul>
+<li><strong>局部变量表（LV）</strong><ul>
+<li><strong>定义为一个数字数组，主要用于存储方法参数和定义在方法体内的局部变量</strong>，这些数据类型包括各类基本数据类型、对象引用，以及returnAddress类型。</li>
+<li><strong>不存在数据安全问题</strong>。原因：建立在线程的栈上，是线程的私有数据，不涉及共享。</li>
+<li><strong>局部变量表所需的容量大小是在编译的时候确定下来的</strong>，并保存在方法的Code属性的maxinum local variables数据项中。方法运行期间是不会改变局部变量表的大小的。</li>
+<li><strong>方法嵌套调用的次数由栈的大小决定</strong>。栈越大，方法嵌套调用次数越多。主要影响栈帧大小的是局部变量表。因此如果局部变量表越大，栈帧就越大，进而该方法调用就会占用更多的栈空间，导致其嵌套调用次数就会减少。</li>
+<li><strong>局部变量表中的变量只在当前方法调用中有效。当方法调用结束时，随着栈帧的销毁，局部变量表也会随之销毁。</strong></li>
+<li><strong>槽（slot)</strong>:是局部变量表中最基本的存储单元，32位以内类型只占用一个slot(byte\short\char\boolean在存储前都会被转换成int)，64位的类型（double和long)占两个slot。  <ul>
+<li>局部变量会<strong>按照顺序</strong>被复制到LV的每一个slot中。根据首地址（index）对局部变量进行访问。  </li>
+<li>如果当前帧是由<strong>构造方法或实例方法</strong>创建的，那么<strong>该对象引用this将会存放在index为0的slot处</strong>，其余的参数按照参数表顺序继续排列。<em>（这条也就说明了为什么静态方法不能用this）</em></li>
+<li><strong>slot的重复利用</strong>：栈帧中的局部变量表中的槽位是可以重用的，如果一个局部变量过了其作用域，那么在其作用域之后申明的新的局部变量就很有可能会复用过期局部变量的槽位。举例：<br>  ![槽的重复利用](</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/%E6%A7%BD%E7%9A%84%E9%87%8D%E5%A4%8D%E5%88%A9%E7%94%A8.jpg">https://jvm-lcc.oss-cn-beijing.aliyuncs.com/%E6%A7%BD%E7%9A%84%E9%87%8D%E5%A4%8D%E5%88%A9%E7%94%A8.jpg</a> “槽的重复利用”)<br>        <em>ps：实测当b或c为double时，槽也会复用</em><br>        - 补充说明：<br>            - 在栈帧中，与性能调优关系最为密切的就是LV表。<br>            - <strong>LV表中的变量也是重要的垃圾回收根节点，只要是LV表中直接或间接引用的对象都不会被回收</strong>。</p>
+<pre><code>    &gt; 复习：变量的分类  
+    1.按数据类型分：基本数据类型、引用数据类型  
+    2.按在类中声明的位置分：成员变量（又细分为类变量（静态修饰）、实例变量（非静态修饰））、局部变量
+
+    &gt; 静态变量（类变量）、实例变量和局部变量的区别：  
+    **静态变量**：在之前链接阶段中的准备阶段会被默认赋值，在初始化阶段会被显示赋值。   
+    **实例变量**：随着对象的创建，会在堆空间中分配实例变量空间，并进行默认赋值。  
+    **局部变量**：**在使用前，必须要进行显示赋值**，否则编译不通过。
+</code></pre>
+<ul>
+<li><p><strong>操作数栈（表达式栈）</strong></p>
+<ul>
+<li>在方法执行过程中，根据字节码指令，往栈中写入数据（入栈）或提取数据（出栈），操作数栈是由数组实现的。</li>
+<li>操作数栈<strong>主要用于保存计算过程的中间结果，同时作为计算过程中变量临时的存储空间</strong>。</li>
+<li>操作数栈就是JVM执行引擎的一个工作区，当一个方法开始执行的时候，一个新的栈帧也会随之被创建出来，<strong>这个方法的操作数栈是空的</strong>。</li>
+<li>每一个<strong>操作数栈都会拥有一个明确的栈深度</strong>用于存储数值，其所需的<strong>最大深度在编译期就定义好了</strong>，保存在方法的Code属性中，为max_stack的值。</li>
+<li><strong>若被调用的方法带有返回值，其返回值将会被压入当前栈帧的操作数栈中</strong>，并更新PC寄存器中下一条需要执行的字节码指令。</li>
+<li>操作数栈中元素的数据类型与字节码指令的序列严格匹配，编译器在编译期间进行验证，同时在类加载过程中的类检验阶段的数据流分析阶段要再次验证。</li>
+<li>32bit类型占用一个栈单位深度，64bit类型占用两个栈单位深度。</li>
+<li>Java虚拟机的<strong>解释引擎是基于栈的执行引擎</strong>，其中的栈指的就是操作数栈。</li>
+</ul>
+<blockquote>
+<p><strong>栈顶缓存技术</strong><br>  问题：栈式架构的JVM需要更多的指令分派次数和内存读/写次数。由于操作数是存储在内存中的，频繁的内存读/写操作会应援执行速度。<br>  解决：HotSpot提出栈顶缓存技术。即<strong>将栈顶元素全部缓存在物理CPU的寄存器中，以降低对内存的读/写次数，提升引擎的执行效率</strong>。</p>
+</blockquote>
+</li>
+<li><p>以下三部分（动态链接、方法返回地址、附加信息）也被合称为帧数据区</p>
+</li>
+<li><p><strong>动态链接（指向运行时常量池的方法引用）</strong></p>
+<ul>
+<li>在Java源文件被编译到字节码文件中时，所有变量和方法都作为符号引用保存在class文件的常量池里。</li>
+<li>每一个栈帧内部都包含一个<strong>指向运行时常量池中该栈帧所属方法的引用</strong>。包含这个引用的目的就是为了支持当前方法的代码能够实现动态链接。</li>
+<li>动态链接的作用就是为了将这些符号引用转换为调用方法的直接引用。</li>
+</ul>
+<blockquote>
+<p>❤<strong>方法的调用：动态绑定、静态绑定</strong><br>  <strong>链接</strong>：静态链接、动态链接。=&gt;<strong>链接只针对方法</strong>。<br>  <strong>绑定</strong>：早起绑定、晚期绑定。绑定是一个<strong>字段、方法或者类</strong>在符号引用被替换为直接引用的过程，仅发生一次。<br>  方法的早期绑定（静态链接）：目标方法如果在编译期可知，且运行期保持不变，则可将这个方法与所属的类型进行绑定。<br>  方法的晚期绑定（动态链接）：如果被调用的方法在编译器无法被确定下来（如多态），只能在程序运行期根据实际的类型绑定相关的方法。</p>
+</blockquote>
+<blockquote>
+<p>❤<strong>方法的调用：虚方法、非虚方法</strong><br>  <strong>非虚方法</strong>：方法在编译期就确定了具体的调用版本，这个版本在运行时不可变。包括所有不涉及到多态的方法：静态方法、私有方法、final方法、实例构造器、父类方法(super.xxx())<br>  <strong>虚方法</strong>：除上述方法之外的其他方法。 只要方法<strong>可能</strong>被重写，就都是虚方法，不管它现在有没有被重写。<br>  <em>子类对象的多态性的使用前提：1、类的继承关系 2、方法的重写</em><br>  <strong>JVM的方法调用指令：</strong><br>  1.非虚方法(不包括final)：invokestatic(针对静态方法)、invokespecial<br>  2.虚方法：invokevirtual、invokeinterface<br>  3.动态指令invokedynamic：jdk7加入，为了支持动态类型语言。<br>  4.特殊情况final：在子类调用父类的由final声明的方法时，指令为invokevirtual<br>  <em>动态语言与静态语言的区别：区别在于对类型的检测是在编译期还是运行期，举例：lambda表达式、python、JS</em></p>
+</blockquote>
+<blockquote>
+<p><strong>方法的调用：方法重写的本质</strong><br>  1.找到操作数栈顶的第一个元素所执行的对象的实际类型，记作C<br>  2.如果在类型C中找到与常量中的描述符（方法的参数列表和返回值）和简单名称都相符的方法，则进行访问权限校验。通过则返回这个方法的直接引用，查找过程结束；不通过则返回java.lang.IllegalAccessError异常。<br>  3.若未找到与常量中的描述符和简单名称都相符的方法，按照继承关系从下往上依次对C的各个父类进行第2步搜索和验证过程。<br>  4.如果始终没有找到合适的方法，则抛出java.lang.AbstractMethodError异常（即调用的方法还没有被实现，是个抽象方法）<br>  <strong>虚方法表</strong>：为了提高性能，JVM在类的方法区建立一个虚方法表（非虚方法不需要）来实现。使用索引表代替以上查找过程。每个类中都有一个虚方法表，存放各个方法的实际入口。虚方法表会在类加载的链接阶段（具体在解析阶段）被创建并开始初始化，类的变量初始值准备完成后，JVM会把该类的方发表也初始化完毕。</p>
+</blockquote>
+</li>
+<li><p>方法返回地址（方法正常退出或异常退出的定义）<br>  为了好理解，假设A调用B</p>
+<ul>
+<li>存放调用该方法的PC寄存器的值（B的方法返回地址处存放A调用B后的下一条指令的PC计数器的值）</li>
+<li>在方法退出后都返回该方法被调用的位置。<strong>方法B正常退出时，A的PC计数器的值作为返回地址，即调用B的指令的下一条指令的地址</strong>，方法B异常退出时，返回地址要通过异常表来确定，栈帧中一般不会保存这部分信息。</li>
+<li><strong>正常完成出口和异常完成出口的区别</strong>：通过异常完成出口退出的不会给他的上层调用者产生任何的返回值。</li>
+<li>正常完成出口指令：ireturn(返回值为boolean\byte\char\short\int)、lreturn、freturn、dreturn、areturn(返回值为引用类型)、return(void方法、实例初始化方法<init>、类和接口的初始化方法<clinit>)</clinit></init></li>
+</ul>
+</li>
+<li><p>一些附加信息<br>  允许携带与JVM实现有关的一些附加信息，但不一定有。例如：对程序调试提供支持的信息。</p>
+</li>
+</ul>
+<h2 id="❤栈的相关面试题"><a href="#❤栈的相关面试题" class="headerlink" title="❤栈的相关面试题"></a>❤栈的相关面试题</h2><ol>
+<li>举例栈溢出的情况？（StackOverflowError）<ul>
+<li>通过-Xss设置栈的大小</li>
+<li>栈大小固定会报栈溢出，栈大小可以动态调整可能会报OOM</li>
+</ul>
+</li>
+<li>调整栈大小，就能保证不出现溢出吗？<br> 不能，比如要是整个死循环的递归还是会栈溢出。</li>
+<li>分配的栈内存越大越好么？<br> 不是，会挤占别的线程的空间，可能会导致线程数变少。</li>
+<li>垃圾回收是否涉及到虚拟机栈？<br> 不会。它只有进栈出栈，不要的栈帧直接出栈就行，不需要显示的回收。</li>
+<li>方法中定义的局部变量是否涉及线程安全问题？<br> 具体问题具体分析。如果局部变量是在内部产生内部消亡的，就是线程安全的。如果不是内部产生的（比如某方法局部变量作为参数传递到了另一个方法），或者不是内部消亡的，生命周期没有结束（比如某方法的局部变量作为返回值传出去了），就是线程不安全的。</li>
+</ol>
+<h1 id="本地方法栈"><a href="#本地方法栈" class="headerlink" title="本地方法栈"></a>本地方法栈</h1><p>作用：类似虚拟机栈，用于管理<strong>本地方法</strong>的调用。<br>具体做法：在本地方法栈中登记本地方法，在执行引擎执行时加载本地方法库。<br>特点：</p>
+<ul>
+<li>线程私有的</li>
+<li>允许被实现成固定或是可动态扩展的内存大小。<br>内存溢出异常（同虚拟机栈）：<ul>
+<li>StackOverflowError</li>
+<li>OOM</li>
+</ul>
+</li>
+<li>本地方法是C语言实现</li>
+<li><strong>当某个线程调用一个本地方法时，它就进入了一个全新的并且不再受虚拟机限制的世界。它和虚拟机拥有同样的权限</strong>。<ul>
+<li>本地方法可以通过本地方法接口<strong>访问JVM内部的运行时数据区</strong></li>
+<li>可以直接使用本地处理器中的<strong>寄存器</strong></li>
+<li>可以从本地内存的堆中分配任意数量的<strong>内存</strong></li>
+</ul>
+</li>
+<li>并不是所有JVM都支持本地方法。只是HotSpot里有本地方法栈。在<strong>HotSpot中虚拟机栈和本地方法栈合二为一了</strong>。</li>
+</ul>
+<h1 id="堆"><a href="#堆" class="headerlink" title="堆"></a>堆</h1><h2 id="核心概述"><a href="#核心概述" class="headerlink" title="核心概述"></a>核心概述</h2><ul>
+<li><strong>一个进程对应一个JVM实例，一个JVM实例只存在一个堆内存</strong>，堆也是Java内存管理的核心区域。</li>
+<li>Java堆区在JVM启动的时候即被创建，其空间也就确定了。堆是JVM管理的最大一块内存空间。<ul>
+<li>堆内存大小可以调节</li>
+</ul>
+</li>
+<li>《Java虚拟机规范》规定，堆可以处于<strong>物理上不连续的内存空间，但在逻辑上是连续的</strong>。</li>
+<li>所有线程共享Java堆，在这里还可以划分<strong>线程私有的缓冲区</strong>（Thread Local Allocation Buffer， TLAB（每个线程独有））。</li>
+<li>“几乎”所有的对象实例以及数组都应当在运行时分配在堆上。</li>
+<li>数组和对象可能永远不会存储在栈上，因为栈帧中保存引用，这个引用指向对象或者数组在堆中的位置。<br>  <img src="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/%E5%A0%86%E4%B8%8Ejava%E6%A0%88.png" alt="堆与java栈" title="堆与java栈" loading="lazy"></li>
+<li>方法结束后，堆中的对象不会马上被移除，仅仅在垃圾收集的时候才会被移除。</li>
+<li>堆是垃圾回收的重点区域。</li>
+<li>❤<strong>内存细分</strong>：<ul>
+<li>Java7及以前堆内存逻辑上分为三部分：新生区+养老区+永久区<ul>
+<li>新生区=新生代=年轻代<ul>
+<li>伊甸园区</li>
+<li>幸存者区</li>
+</ul>
+</li>
+<li>养老区=老年区=老年代</li>
+<li>永久区=永久代</li>
+</ul>
+</li>
+<li>Java8及以后堆内存逻辑上分为三部分：新生区+养老区+元空间<ul>
+<li>新生区=新生代=年轻代<ul>
+<li>伊甸园区</li>
+<li>幸存者区</li>
+</ul>
+</li>
+<li>养老区=老年区=老年代</li>
+<li>元空间</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="设置堆内存大小与OOM"><a href="#设置堆内存大小与OOM" class="headerlink" title="设置堆内存大小与OOM"></a>设置堆内存大小与OOM</h2><ul>
+<li><p>-Xms：用于表示堆区的<strong>起始内存</strong>（年轻代+老年代），等价于-XX:InitialHeapSize</p>
+<ul>
+<li>-X是jvm的运行参数</li>
+<li>ms是memory start</li>
+<li>默认初试内存：物理电脑内存大小/64</li>
+</ul>
+<pre><code>  Runtime.getRuntime().totalMemory();
+</code></pre>
+</li>
+<li><p>-Xmx：用于表示堆区的<strong>最大内存</strong>（年轻代+老年代），等价于-XX:MaxHeapSize</p>
+<ul>
+<li>一旦堆区中的内存大小超过-Xmx所指定的最大内存，会抛<strong>OOM异常</strong></li>
+<li>默认最大内存：物理电脑内存大小/4</li>
+</ul>
+<pre><code>Runtime.getRuntime().maxMemory(); 
+</code></pre>
+</li>
+<li><p><strong>开发中建议把初始堆内存和最大堆内存设置成一样的值</strong>。因为频繁的扩容和释放会带来性能压力。</p>
+</li>
+<li><p>查看设置参数</p>
+<ul>
+<li>方式1：jps查进程-&gt;jstat -gc 进程id</li>
+<li>方式2：-XX:+PrintGCDetails</li>
+</ul>
+</li>
+<li><p>注意：虽然每一个幸存者区都被分配了内存，但是一般认为只有一个幸存者区放数据，因此java计算出来的分配给堆的内存会比实际分配给堆的内存少一些（只计算了一份幸存者区）。</p>
+</li>
+<li><p><strong>虚拟机可视化工具java VisualVM</strong></p>
+</li>
+</ul>
+<h2 id="❤为对象分配内存：TLAB"><a href="#❤为对象分配内存：TLAB" class="headerlink" title="❤为对象分配内存：TLAB"></a>❤为对象分配内存：TLAB</h2><ul>
+<li>对伊甸园区为每个线程分配私有的缓存区</li>
+<li>作用：<strong>快速分配策略</strong>：多线程同时分配内存时，可以避免非线程安全问题，同时提升内存分配吞吐量。</li>
+<li>尽管不是所有对象实例都能在TLAB中成功分配内存，但<strong>JVM确实是将TLAB作为内存分配的首选</strong>。</li>
+<li>默认情况下，TLAB内存仅占整个伊甸园空间的<strong>1%</strong></li>
+<li>一旦对象在TLAB空间分配内存失败，JVM就会尝试通过<strong>加锁机制</strong>确保数据操作的原子性，从而直接在伊甸园空间分配内存。</li>
+<li>对象分配过程<br><img src="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/TLAB%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D.png" alt="TLAB对象分配过程" title="TLAB对象分配过程" loading="lazy"></li>
+<li>相关参数<ul>
+<li><code>-XX:UseTLAB</code> 设置是否开启TLAB空间（默认开启）</li>
+<li><code>-XX:TLABWasteTargetPercent</code>设置TLAB空间占伊甸园空间的百分比大小</li>
+</ul>
+</li>
+</ul>
+<h3 id="面试题：堆空间一定是共享的吗？"><a href="#面试题：堆空间一定是共享的吗？" class="headerlink" title="面试题：堆空间一定是共享的吗？"></a>面试题：堆空间一定是共享的吗？</h3><p>不是，伊甸园区的TLAB是线程私有的。</p>
+<h2 id="❤堆空间的参数设置"><a href="#❤堆空间的参数设置" class="headerlink" title="❤堆空间的参数设置"></a>❤堆空间的参数设置</h2><ul>
+<li><p><code>-XX:+PrintFlagsInitial</code> 查看所有参数默认初始值</p>
+</li>
+<li><p><code>-XX:+PrintFlagsFinal</code> 查看所有参数最终值</p>
+</li>
+<li><p>具体查看某个参数的指令（如查看幸存区比例）：</p>
+<ol>
+<li><code>jps</code>：查看当前运行中的进程</li>
+<li><code>jinfo -flag SurvivorRatio</code> 进程id</li>
+</ol>
+</li>
+<li><p><code>-Xms</code> 用于表示堆区的<strong>起始内存</strong>（年轻代+老年代），等价于<code>-XX:InitialHeapSize</code>，默认初试内存：物理电脑内存大小/64</p>
+</li>
+<li><p><code>-Xmx</code> 用于表示堆区的<strong>最大内存</strong>（年轻代+老年代），等价于<code>-XX:MaxHeapSize</code>，默认最大内存：物理电脑内存大小/4  </p>
+</li>
+<li><p><code>-Xmn</code> 设置新生代的大小（初始值及最大值）</p>
+</li>
+<li><p><code>-XX:NewRatio</code> 设置新生代与老年代堆结构的占比（默认值2，新生代占1/3，老年代占2/3）</p>
+</li>
+<li><p><code>-XX:SurvivorRatio</code> 设置伊甸园区和幸存者区占比（默认值2）。</p>
+<ul>
+<li>伊甸园区偏大的话，会导致MinorGC后数据直接进入老年代，使MinorGC失去意义</li>
+<li>幸存区偏大的话，MinorGC频率变高，stw变多，性能下降</li>
+</ul>
+</li>
+<li><p><code>-XX:MaxTenuringThreshold=threshold</code> 晋升阈值（默认和垃圾回收器有关）</p>
+</li>
+<li><p><code>-XX:+PrintGCDetails</code> 输出垃圾回收的详细信息<br>  打印GC简要信息<br>  - <code>-XX:+PrintGC</code><br>  - <code>-verbose:gc</code></p>
+</li>
+<li><p><code>-XX:HandlePromotionFailure</code>：是否设置空间策略担保<br>  jdk7之后这个参数不会再影响到虚拟机的空间分配担保策略，相当于这个参数默认为true了，即：只要老年代的连续空间大于新生代对象总大小或者历次晋升的平均大小就会Minor GC，否则将进行Full GC。</p>
+</li>
+</ul>
+<h2 id="堆内存诊断"><a href="#堆内存诊断" class="headerlink" title="堆内存诊断"></a>堆内存诊断</h2><ul>
+<li>jps工具：查看当前系统中有哪些Java进程</li>
+<li>jmap工具：查看堆内存占用情况<pre><code># 查看某进程堆内存占用情况
+jmap -heap 进程id
+</code></pre>
+</li>
+<li>jconsole工具：可以连续监测，多功能监测，图形化界面<br>具体可以查看：内存占用、线程、类、CPU占用情况</li>
+<li>举例：多次垃圾回收后内存占用依旧高，如何排查？</li>
+</ul>
+<ol>
+<li>可以去jconsole执行一次JC，看看新生代和老年代的情况</li>
+<li>使用jvisualvm 可视化虚拟机<br>使用监视-&gt;堆(dumnp) 截取堆信息快照进行分析（堆转储）。检查目前最大的对象，看看是哪个对象在占用内存。<br><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1yE411Z7AP?p=21&amp;spm_id_from=pageDriver">https://www.bilibili.com/video/BV1yE411Z7AP?p=21&amp;spm_id_from=pageDriver</a></li>
+</ol>
+<h2 id="堆是分配对象存储的唯一选择吗？"><a href="#堆是分配对象存储的唯一选择吗？" class="headerlink" title="堆是分配对象存储的唯一选择吗？"></a>堆是分配对象存储的唯一选择吗？</h2><p>不是。</p>
+<ul>
+<li>如果经过逃逸分析后发现，<strong>一个对象并没有逃逸出方法的话，那么就可能被优化成栈上分配</strong>。</li>
+<li>TaoBaoVM的GCIH技术实现off-heap，<strong>将声明周期较长的Java对象从heap中移至heap外</strong>，并且GC不能管理GCIH内部的Java对象</li>
+</ul>
+<h3 id="逃逸分析"><a href="#逃逸分析" class="headerlink" title="逃逸分析"></a>逃逸分析</h3><ul>
+<li>JDK7后默认开启</li>
+<li>分析对象动态作用域<ul>
+<li>当一个对象在方法中被定义后，对象只在方法内部使用，则认为没有发生逃逸。</li>
+<li>当一个对象在方法中被顶以后，它被外部方法所引用，则认为发生逃逸。（如作为参数传递到了其他方法里）</li>
+</ul>
+</li>
+<li>结论：开发中能使用局部变量的，就不要使用在方法外定义</li>
+</ul>
+<h3 id="逃逸分析：代码优化"><a href="#逃逸分析：代码优化" class="headerlink" title="逃逸分析：代码优化"></a>逃逸分析：代码优化</h3><h4 id="栈上分配"><a href="#栈上分配" class="headerlink" title="栈上分配"></a>栈上分配</h4><p> 对没有逃逸出方法外的对象进行栈上分配。线程结束后，栈空间被回收，局部变量对象也被回收。这样无需进行GC了。</p>
+<h4 id="同步省略（锁消除）"><a href="#同步省略（锁消除）" class="headerlink" title="同步省略（锁消除）"></a>同步省略（锁消除）</h4><ul>
+<li>通过逃逸分析判断同步代码块所使用的的锁对象是否只能被一个线程访问而没有被发布到其他线程。</li>
+<li>如果一个对象被发现只有一个线程被访问到，那么对于这个对象的操作可以不考虑同步。</li>
+</ul>
+<h4 id="分离对象或标量替换"><a href="#分离对象或标量替换" class="headerlink" title="分离对象或标量替换"></a>分离对象或标量替换</h4><ul>
+<li>标量：无法再分解成更小的数据的数据（如基本数据类型就是标量）。</li>
+<li>聚合量：还可以再分解的数据，如Java对象就是聚合量。</li>
+<li>有的对象可能不需要作为一个连续的内存结构存在也可以被访问到，那么对象的部分（或全部）可以不存储在堆，而是存储在栈中。</li>
+<li>举例：<br>  标量替换前：<br>  <img src="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/%E6%A0%87%E9%87%8F%E6%9B%BF%E6%8D%A2%E5%89%8D.png" alt="标量替换前" title="标量替换前" loading="lazy"><br>  标量替换后：<br> <img src="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/%E6%A0%87%E9%87%8F%E6%9B%BF%E6%8D%A2%E5%90%8E.png" alt="标量替换后" title="标量替换后" loading="lazy"></li>
+</ul>
+<h1 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><ul>
+<li>所有JVM线程共享的区域</li>
+<li>存储与类结构有关的信息<ul>
+<li>运行时常量池</li>
+<li>属性和方法数据</li>
+<li>方法和构造器代码</li>
+<li>构造器</li>
+</ul>
+</li>
+<li>在虚拟机启动时被创建，<strong>逻辑上</strong>是堆的组成部分。<br><strong>在hotspot jdk1.8以前，方法区在堆的永久代中，1.8及以后放在了元空间中，用的是本地内存（OS的内存）</strong>，其中常量池的StringTable被移入了堆中。</li>
+<li>方法区也会导致OOM<br><img src="/image/%E6%96%B9%E6%B3%95%E5%8C%BA%E8%AF%B4%E6%98%8E.png" title="方法区说明" loading="lazy"></li>
+</ul>
+<h2 id="内存溢出问题-OOM"><a href="#内存溢出问题-OOM" class="headerlink" title="内存溢出问题 OOM"></a>内存溢出问题 OOM</h2><p>类加载过多会导致内存溢出</p>
+<ul>
+<li>1.8以前 永久代内存溢出</li>
+<li>1.8及以后 元空间内存溢出</li>
+</ul>
+<p>场景：  </p>
+<ul>
+<li>Spring利用cglib生成动态代理</li>
+<li>Mybatis利用cglib产生实现类<br>cglib是在运行期间动态生成字节码完成动态类加载，代理技术里大量运用了这种生成技术，所以有可能导致永久代/元空间的OOM</li>
+</ul>
+<h2 id="参数"><a href="#参数" class="headerlink" title="参数"></a>参数</h2><p>-XX:MaxPermSize 最大永久代内存大小（1.8以前）<br>-XX:MaxMetaSpaceSize 最大元空间内存大小（1.8及以后）</p>
+<h2 id="运行时常量池"><a href="#运行时常量池" class="headerlink" title="运行时常量池"></a>运行时常量池</h2><p>二进制字节码由三部分组成：类基本信息、常量池、类方法定义（虚拟机指令）  </p>
+<ul>
+<li>常量池：就是一张表，虚拟机指令根据这张常量表找到要执行的类名、方法名、参数类型、字面量（整数、bool等）等信息</li>
+<li>运行时常量池：常量池是.class文件中的，<strong>当该类被加载，它的常量池信息就会被放入运行时常量池</strong>，并把符号引用（#1、#2之类的）变为真实地址</li>
+</ul>
+<h3 id="StringTable（串池）"><a href="#StringTable（串池）" class="headerlink" title="StringTable（串池）"></a>StringTable（串池）</h3><ul>
+<li>举例<pre><code>String s1 = "a";
+String s2 = "b";
+String s3 = "ab"
+</code></pre>
+<ul>
+<li>变量拼接 false<pre><code>String s4 = s1 + s2;
+
+其内部实际上执行了(new StringBuilder).append("a").append("b").toString();
+StringBuilder的toString()实际上执行了：new String("ab"); 其实际创建了一个对象"ab"，结果存储在堆中
+因此s3 != s4
+</code></pre>
+</li>
+<li>字符直接拼接：编译期优化 true<pre><code>String s5 = "a" + "b";
+
+编译期直接被优化为String s5 = "ab"; 会直接去用串池中已有的字符串ab
+因此s3 == s5
+</code></pre>
+</li>
+</ul>
+</li>
+<li>串池特性：<ul>
+<li><p>利用串池的机制（类似哈希表），来避免重复创建字符串对象</p>
+</li>
+<li><p>延迟加载：常量池中的字符串仅是符号，第一次使用才会变成String对象<br>  只有执行到相关指令时，字符串才会加载到串池中<br>  如执行到<code>String s1 = "a";</code>时才会把a加载到串池中</p>
+</li>
+<li><p>字符串<strong>变量</strong>拼接原理为StringBuilder（jdk1.8)</p>
+</li>
+<li><p>字符串<strong>常量</strong>拼接的原理是编译期优化</p>
+</li>
+<li><p>串池只存常量，不存动态拼接的结果</p>
+</li>
+<li><p>串池长度固定（即桶个数固定）</p>
+</li>
+<li><p>可以使用<strong>intern方法</strong>，主动将串池中还没有的字符串放入串池<br>  可以使用该方法将字符串对象尝试放入串池</p>
+<ol>
+<li>jdk1.8:<br> 如果串池<strong>有相同字符串</strong>则不会放入，原字符串引用指向的仍是堆中的对象<br> 如果<strong>没有</strong>则把当前对象的引用放入串池（常量池中不需要再存储一份对象了，可以直接存储堆中的引用）<br> 最后会<strong>把串池中的对象返回</strong><br> ❤举例1：原串池中没有相同字符串<pre><code>String s = new String("a") + new String("b"); 
+//堆：new String("a")、new String("b")、new String("ab")（这个是StringBuilder创建）
+//串池："a"、"b"（没有"ab"，因为"ab"是变量拼接得到的）
+String s2 = s.intern();
+//串池："a"、"b"、"ab"
+System.out.println(s2 == "ab");//true
+System.out.println(s == "ab");//true 注意这里！
+</code></pre>
+ ❤举例2：原串池中有相同字符串<pre><code>String x = "ab";
+String s = new String("a") + new String("b"); 
+//堆：new String("a")、new String("b")、new String("ab")（这个是StringBuilder创建）
+//串池："ab"、"a"、"b"
+String s2 = s.intern();
+System.out.println(s2 == "ab");//true
+System.out.println(s == "ab");//true 注意这里！
+</code></pre>
+</li>
+<li>jdk1.6<br> 如果串池有相同字符串则同jdk1.8<br> 如果没有则<strong>会把此对象复制一份放入串池</strong>，原字符串引用指向串池中的字符串<br> 最后会把串池中的对象返回<br> ❤举例：原串池中没有相同字符串<pre><code>String s = new String("a") + new String("b"); 
+//堆：new String("a")、new String("b")、new String("ab")（这个是StringBuilder创建）
+//串池："a"、"b"（没有"ab"，因为"ab"是变量拼接得到的）
+String s2 = s.intern();
+//s复制一份放入串池
+//串池："a"、"b"、"ab"
+System.out.println(s2 == "ab");//true
+System.out.println(s == "ab");//false 注意这里！
+</code></pre>
+</li>
+</ol>
+</li>
+<li><p>StringTable位置</p>
+<ul>
+<li>1.6：是方法区常量池中的一部分，实际存储在永久代中</li>
+<li>1.7及以后：从常量池中分离出来，原来的方法区放在了元空间中（1.8，1.7的方法区还在永久代），串池被放入堆中<br>  位置更改原因：永久代中只有full gc（老年代空间不足时才会触发）时才会回收，串池回收效率不高，会占用大量内存，导致永久代内存不足。</li>
+</ul>
+</li>
+<li><p>StringTable垃圾回收</p>
+<ul>
+<li>一些参数<ul>
+<li>-XX:PrintStringTableStatistics 打印串池统计信息</li>
+<li>-XX:+PrintGCDetails 打印垃圾回收信息,可以详细了解GC中的变化</li>
+<li>verbose:gc 显示GC的操作内容。可以显示最忙和最空闲收集行为发生的时间、收集前后的内存大小、收集需要的时间等。<br>  串池会触发垃圾回收，如果一些字符串没有被引用过，就会被回收掉。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>StringTable性能调优</p>
+<ol>
+<li>-XX:StringTableSize=桶个数：调整<strong>哈希桶的个数</strong>，增大桶个数可以减少哈希冲突，不用去桶中查链表了，加快了哈希查找速度。如果系统中字符串常量个数很多，应适当加大桶的数量。</li>
+<li>考虑是否将字符串对象入池：intern调优可以去重（比如好多用户都是重复地址，我用一个intern就可以在内存中只存一份地址），减少内存占用。</li>
+</ol>
+</li>
+<li><p>特殊说明：</p>
+<ul>
+<li>在利用-Xmx:10m修改堆内存大小后，若字符串过多，不会报堆内存溢出，而是会报OOM:GC overhead limit exceeded。原因是开启了UseGCOverheadLimit(-XX:+UseGCOverheadLimit)，当GC时98%的时间都在进行垃圾收集，但只有不到2%的堆被回收掉时会触发此报错。如果要演示堆空间不足，需要把它关掉(-XX:-UseGCOverheadLimit)</li>
+<li>1.7做出的改动只是把串池挪到堆中，永久代还没被完全删除</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div></section><div id="reward-container"><span class="hty-icon-button button-glow" id="reward-button" title="打赏" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === &quot;none&quot;) ? &quot;block&quot; : &quot;none&quot;;"><span class="icon iconify" data-icon="ri:hand-coin-line"></span></span><div id="reward-comment">I'm so cute. Please give me money.</div></div><ul class="post-copyright"><li class="post-copyright-author"><strong>本文作者：</strong>Cuican Li</li><li class="post-copyright-link"><strong>本文链接：</strong><a href="http://cuican.life/2022/09/26/0911-jvm/" title="【知识记录】JVM知识记录（中）">http://cuican.life/2022/09/26/0911-jvm/</a></li><li class="post-copyright-license"><strong>版权声明：</strong>本博客所有文章除特别声明外，均默认采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><span class="icon iconify" data-icon="ri:creative-commons-line"></span><span class="icon iconify" data-icon="ri:creative-commons-by-line"></span><span class="icon iconify" data-icon="ri:creative-commons-nc-line"></span><span class="icon iconify" data-icon="ri:creative-commons-sa-line"></span></a> 许可协议。</li></ul></article><div class="post-nav"><div class="post-nav-item"><a class="post-nav-prev" href="/2022/10/04/1004-jvm/" rel="prev" title="【知识记录】JVM知识记录（下）"><span class="icon iconify" data-icon="ri:arrow-left-s-line"></span><span class="post-nav-text">【知识记录】JVM知识记录（下）</span></a></div><div class="post-nav-item"><a class="post-nav-next" href="/2022/09/21/Interfacing/" rel="next" title="【论文笔记】Leveraging Public-Private Blockchain Interoperability for Closed Consortium Interfacing"><span class="post-nav-text">【论文笔记】Leveraging Public-Private Blockchain Interoperability for Closed Consortium Interfacing</span><span class="icon iconify" data-icon="ri:arrow-right-s-line"></span></a></div></div></div><div class="hty-card" id="comment"><div id="waline"></div><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@waline/client@v2/dist/waline.css"><script>window.CONFIG.waline.config.path = "/2022/09/26/0911-jvm/"</script><div class="js-Pjax"><script src="/js/comments/waline.js" type="module" defer></script></div></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2019 – 2023 </span><span class="with-love" id="animate"><span class="icon iconify" data-icon="ri:cloud-line"></span></span><span class="author"> Cuican Li</span></div><div class="powered"><span>由 <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> 驱动 v6.3.0</span><span class="footer-separator">|</span><span>主题 - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.10.9</span></div></footer></div><a class="hty-icon-button" id="back-to-top" aria-label="back-to-top" href="#"><span class="icon iconify" data-icon="ri:arrow-up-s-line"></span><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#0078E7" stroke-width="2" stroke-linecap="round"></circle></svg></a><a class="popup-trigger hty-icon-button icon-search" id="search" href="javascript:;" title="搜索"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:search-line"></span></span></a><script>window.addEventListener("DOMContentLoaded", () => {
+  // Handle and trigger popup window
+  document.querySelector(".popup-trigger").addEventListener("click", () => {
+    document.querySelector(".popup").classList.add("show");
+    setTimeout(() => {
+      document.querySelector(".search-input").focus();
+    }, 100);
+  });
+
+  // Monitor main search box
+  const onPopupClose = () => {
+    document.querySelector(".popup").classList.remove("show");
+  };
+
+  document.querySelector(".popup-btn-close").addEventListener("click", () => {
+    onPopupClose();
+  });
+
+  window.addEventListener("keyup", event => {
+    if (event.key === "Escape") {
+      onPopupClose();
+    }
+  });
+});
+</script><script defer src="https://fastly.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script><script defer src="https://fastly.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script><script defer src="/js/search/algolia-search.js" type="module"></script><div class="popup search-popup"><div class="search-header"><span class="popup-btn-close close-icon hty-icon-button"><span class="icon iconify" data-icon="ri:close-line"></span></span></div><div class="search-input-container"></div><div class="algolia-results"><div id="algolia-stats"></div><div id="algolia-hits"></div><div class="algolia-pagination" id="algolia-pagination"></div></div></div><script src="https://fastly.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js"></script><script>const images = [...document.querySelectorAll('.markdown-body img')]
+mediumZoom(images)</script><style>.medium-zoom-image {
+  z-index: 99;
+}</style></body></html>

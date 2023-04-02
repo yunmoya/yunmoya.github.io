@@ -1,0 +1,532 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0078E7"><meta name="author" content="Cuican Li"><meta name="copyright" content="Cuican Li"><meta name="generator" content="Hexo 6.3.0"><meta name="theme" content="hexo-theme-yun"><title>【知识记录】JVM知识记录（下） | Hexo</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/star-markdown-css@0.4.1/dist/yun/yun-markdown.min.css"><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/prism-theme-vars/base.css"><script src="https://fastly.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>function initScrollReveal() {
+  [".post-card",".markdown-body img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+}
+document.addEventListener("DOMContentLoaded", initScrollReveal);
+document.addEventListener("pjax:success", initScrollReveal);
+</script><link rel="icon" type="image/svg+xml" href="/yun.svg"><link rel="mask-icon" href="/yun.svg" color="#0078E7"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fastly.jsdelivr.net/npm/" crossorigin><script id="yun-config">
+    window.Yun = {}
+    window.CONFIG = {"hostname":"cuican.life","root":"/","title":"灿的小站","version":"1.10.9","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"搜索...","empty":"找不到您查询的内容: ${query}","hits":"找到 ${hits} 条结果","hits_time":"找到 ${hits} 条结果（用时 ${time} 毫秒）"},"anonymous_image":"https://cdn.yunyoujun.cn/img/avatar/none.jpg","say":{"api":"https://el-bot-api.vercel.app/api/words/young"},"algolia":{"hits":{"per_page":8}},"fireworks":{"colors":null},"waline":{"config":{"enable":true,"serverURL":"https://waline.yunyoujun.cn","comment":true,"visitor":true,"emoji":["https://fastly.jsdelivr.net/gh/walinejs/emojis@latest/bilibili/","https://fastly.jsdelivr.net/gh/walinejs/emojis@latest/weibo/","https://fastly.jsdelivr.net/gh/walinejs/emojis@latest/qq/"],"locale":{"placeholder":"填写邮箱，可以收到回复通知哦～"},"requiredMeta":["nick"],"el":"#waline","lang":"zh-CN"},"cdn":"https://fastly.jsdelivr.net/npm/@waline/client@v2/dist/waline.js","dark":"html.dark"},"vendors":{"host":"https://fastly.jsdelivr.net/npm/","darken":"https://fastly.jsdelivr.net/npm/darken@1.5.0"}};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/hexo-theme-yun.js" type="module"></script><link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml"><link rel="preconnect" href="https://www.google-analytics.com" crossorigin><script async src="https://www.googletagmanager.com/gtag/js?id=G-1LL0D86CY9"></script><script>if (CONFIG.hostname === location.hostname) {
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-1LL0D86CY9');
+}</script><script data-ad-client="ca-pub-2245427233262012" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script><script>(function(){
+  var bp = document.createElement('script');
+  var curProtocol = window.location.protocol.split(':')[0];
+  if (curProtocol === 'https') {
+    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+  }
+  else {
+    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+  }
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(bp, s);
+})();</script><!-- Google Tag Manager --><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M9KWR9L');</script><!-- End Google Tag Manager --><meta name="description" content="垃圾回收、直接内存">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【知识记录】JVM知识记录（下）">
+<meta property="og:url" content="http://cuican.life/2022/10/04/1004-jvm/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="垃圾回收、直接内存">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://cuican.life/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%AE%97%E6%B3%95-%E6%A0%87%E8%AE%B0%E6%B8%85%E9%99%A4.png">
+<meta property="og:image" content="http://cuican.life/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%AE%97%E6%B3%95-%E6%A0%87%E8%AE%B0%E6%95%B4%E7%90%86.png">
+<meta property="og:image" content="http://cuican.life/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%AE%97%E6%B3%95-%E5%A4%8D%E5%88%B6.png">
+<meta property="og:image" content="http://cuican.life/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8-%E4%B8%B2%E8%A1%8C.png">
+<meta property="og:image" content="http://cuican.life/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8-%E5%90%9E%E5%90%90%E9%87%8F%E4%BC%98%E5%85%88.png">
+<meta property="og:image" content="http://cuican.life/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8-%E5%93%8D%E5%BA%94%E6%97%B6%E9%97%B4%E4%BC%98%E5%85%88.png">
+<meta property="og:image" content="http://cuican.life/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8-G1%E6%B7%B7%E5%90%88%E9%98%B6%E6%AE%B5.png">
+<meta property="og:image" content="http://cuican.life/image/G1-%E8%B7%A8%E4%BB%A3%E5%BC%95%E7%94%A8.png">
+<meta property="og:image" content="http://cuican.life/image/G1-%E9%87%8D%E6%96%B0%E6%A0%87%E8%AE%B0.png">
+<meta property="article:published_time" content="2022-10-04T08:14:03.000Z">
+<meta property="article:modified_time" content="2022-10-04T08:17:28.718Z">
+<meta property="article:author" content="Cuican Li">
+<meta property="article:tag" content="后端">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://cuican.life/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%AE%97%E6%B3%95-%E6%A0%87%E8%AE%B0%E6%B8%85%E9%99%A4.png"><script>(function() {
+  if (CONFIG.mode !== 'auto') return
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  const setting = localStorage.getItem('darken-mode') || 'auto'
+  if (setting === 'dark' || (prefersDark && setting !== 'light'))
+    document.documentElement.classList.toggle('dark', true)
+})()</script>
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head><body><script src="https://code.iconify.design/2/2.1.1/iconify.min.js"></script><script>// Define global variable
+IconifyProviders = {
+  // Empty prefix: overwrite default API provider configuration
+  '': {
+    // Use custom API first, use Iconify public API as backup
+    resources: [
+        'https://api.iconify.design',
+    ],
+    // Wait for 1 second before switching API hosts
+    rotate: 1000,
+  },
+};</script><script defer src="https://fastly.jsdelivr.net/npm/animejs@latest"></script><script defer src="/js/ui/fireworks.js" type="module"></script><canvas class="fireworks"></canvas><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js" type="module"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="文章目录"><span class="icon iconify" data-icon="ri:list-ordered"></span></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="站点概览"><span class="icon iconify" data-icon="ri:passport-line"></span></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info fix-top"><a class="site-author-avatar" href="/about/" title="Cuican Li"><img width="96" loading="lazy" src="/images/avatar.jpg" alt="Cuican Li"><span class="site-author-status" title="我offer呢">❓︎</span></a><div class="site-author-name"><a href="/about/">Cuican Li</a></div><span class="site-name">Hexo</span><sub class="site-subtitle"></sub><div class="site-description"></div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="我的主页"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:home-4-line"></span></span></a><div class="site-state-item"><a href="/archives/" title="归档"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:archive-line"></span></span><span class="site-state-item-count">13</span></a></div><div class="site-state-item"><a href="/categories/" title="分类"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:folder-2-line"></span></span><span class="site-state-item-count">4</span></a></div><div class="site-state-item"><a href="/tags/" title="标签"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:price-tag-3-line"></span></span><span class="site-state-item-count">6</span></a></div><a class="site-state-item hty-icon-button" href="/about/#comment" title="留言板"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:clipboard-line"></span></span></a></nav><hr style="margin-bottom:0.5rem"><div class="links-of-author"><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://github.com/yunmoya" title="GitHub" target="_blank" style="color:#6e5494"><span class="icon iconify" data-icon="ri:github-line"></span></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="mailto:li_cuican@163.com" title="E-Mail" target="_blank" style="color:#8E71C1"><span class="icon iconify" data-icon="ri:mail-line"></span></a></div><hr style="margin:0.5rem 1rem"><div class="links"><a class="links-item hty-icon-button" href="/links/" title="我的小伙伴们" style="color:dodgerblue"><span class="icon iconify" data-icon="ri:genderless-line"></span></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><span class="icon iconify" data-icon="ri:contrast-2-line"></span></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6"><span class="toc-number">1.</span> <span class="toc-text">垃圾回收</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E5%88%A4%E6%96%AD%E5%AF%B9%E8%B1%A1%E5%8F%AF%E4%BB%A5%E5%9B%9E%E6%94%B6"><span class="toc-number">1.1.</span> <span class="toc-text">如何判断对象可以回收</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%95%E7%94%A8%E8%AE%A1%E6%95%B0%E6%B3%95"><span class="toc-number">1.1.1.</span> <span class="toc-text">引用计数法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%AF%E8%BE%BE%E6%80%A7%E5%88%86%E6%9E%90%E6%B3%95%EF%BC%88JVM%E9%87%87%E7%94%A8%EF%BC%89"><span class="toc-number">1.1.2.</span> <span class="toc-text">可达性分析法（JVM采用）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%94%E7%A7%8D%E5%BC%95%E7%94%A8"><span class="toc-number">1.1.3.</span> <span class="toc-text">五种引用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%AE%97%E6%B3%95"><span class="toc-number">1.2.</span> <span class="toc-text">垃圾回收算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E8%AE%B0%E6%B8%85%E9%99%A4"><span class="toc-number">1.2.1.</span> <span class="toc-text">标记清除</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E8%AE%B0%E6%95%B4%E7%90%86"><span class="toc-number">1.2.2.</span> <span class="toc-text">标记整理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%8D%E5%88%B6"><span class="toc-number">1.2.3.</span> <span class="toc-text">复制</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E4%BB%A3%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6"><span class="toc-number">1.3.</span> <span class="toc-text">分代垃圾回收机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A0%86%E5%86%85%E5%AD%98%E7%BB%93%E6%9E%84%E5%88%92%E5%88%86"><span class="toc-number">1.3.1.</span> <span class="toc-text">堆内存结构划分</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%92%E5%88%86%E5%8E%9F%E5%9B%A0"><span class="toc-number">1.3.2.</span> <span class="toc-text">划分原因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6"><span class="toc-number">1.3.3.</span> <span class="toc-text">回收机制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%8F%82%E6%95%B0"><span class="toc-number">1.3.4.</span> <span class="toc-text">相关虚拟机参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E9%99%85GC%E5%88%86%E6%9E%90"><span class="toc-number">1.3.5.</span> <span class="toc-text">实际GC分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8"><span class="toc-number">1.4.</span> <span class="toc-text">垃圾回收器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%B2%E8%A1%8C"><span class="toc-number">1.4.1.</span> <span class="toc-text">串行</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%9E%E5%90%90%E9%87%8F%E4%BC%98%E5%85%88%EF%BC%881-8%E9%BB%98%E8%AE%A4%EF%BC%89"><span class="toc-number">1.4.2.</span> <span class="toc-text">吞吐量优先（1.8默认）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%93%8D%E5%BA%94%E6%97%B6%E9%97%B4%E4%BC%98%E5%85%88CMS"><span class="toc-number">1.4.3.</span> <span class="toc-text">响应时间优先CMS</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#G1%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8%EF%BC%88JDK9%E9%BB%98%E8%AE%A4%EF%BC%89"><span class="toc-number">1.4.4.</span> <span class="toc-text">G1垃圾回收器（JDK9默认）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#G1%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8%E7%9A%84%E5%88%86%E5%8C%BA"><span class="toc-number">1.4.4.1.</span> <span class="toc-text">G1垃圾回收器的分区</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#G1%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E9%98%B6%E6%AE%B5%EF%BC%88%E5%BE%AA%E7%8E%AF%E8%BF%87%E7%A8%8B%EF%BC%89"><span class="toc-number">1.4.4.2.</span> <span class="toc-text">G1垃圾回收阶段（循环过程）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B0%E7%94%9F%E4%BB%A3%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6"><span class="toc-number">1.4.4.3.</span> <span class="toc-text">新生代垃圾回收</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B0%E7%94%9F%E4%BB%A3%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6-%E5%B9%B6%E5%8F%91%E6%A0%87%E8%AE%B0%EF%BC%88CM-Concurrent-Marking"><span class="toc-number">1.4.4.4.</span> <span class="toc-text">新生代垃圾回收+并发标记（CM,Concurrent Marking)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B7%B7%E5%90%88%E5%9B%9E%E6%94%B6"><span class="toc-number">1.4.4.5.</span> <span class="toc-text">混合回收</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Full-GC%E5%92%8CMinor-GC%E6%80%BB%E7%BB%93%E8%BE%A8%E6%9E%90"><span class="toc-number">1.4.5.</span> <span class="toc-text">Full GC和Minor GC总结辨析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B0%E7%94%9F%E4%BB%A3%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E8%B7%A8%E4%BB%A3%E5%BC%95%E7%94%A8%EF%BC%88%E8%80%81%E5%B9%B4%E4%BB%A3%E5%BC%95%E7%94%A8%E6%96%B0%E7%94%9F%E4%BB%A3%EF%BC%89"><span class="toc-number">1.4.6.</span> <span class="toc-text">新生代垃圾回收跨代引用（老年代引用新生代）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%87%8D%E6%A0%87%E8%AE%B0Remark"><span class="toc-number">1.4.7.</span> <span class="toc-text">重标记Remark</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#G1%E4%BC%98%E5%8C%96"><span class="toc-number">1.4.8.</span> <span class="toc-text">G1优化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#JDK-8u20-%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%8E%BB%E9%87%8D"><span class="toc-number">1.4.8.1.</span> <span class="toc-text">JDK 8u20 字符串去重</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#JDK-8u40-%E5%B9%B6%E5%8F%91%E6%A0%87%E8%AE%B0%E6%97%B6%E7%9A%84%E7%B1%BB%E5%8D%B8%E8%BD%BD"><span class="toc-number">1.4.8.2.</span> <span class="toc-text">JDK 8u40 并发标记时的类卸载</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#JDK-8u40-%E5%9B%9E%E6%94%B6%E5%B7%A8%E5%9E%8B%E5%AF%B9%E8%B1%A1"><span class="toc-number">1.4.8.3.</span> <span class="toc-text">JDK 8u40 回收巨型对象</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#JDK9%E5%B9%B6%E5%8F%91%E6%A0%87%E8%AE%B0%E8%B5%B7%E5%A7%8B%E6%97%B6%E9%97%B4%E8%B0%83%E6%95%B4"><span class="toc-number">1.4.8.4.</span> <span class="toc-text">JDK9并发标记起始时间调整</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E8%B0%83%E4%BC%98"><span class="toc-number">1.5.</span> <span class="toc-text">垃圾回收调优</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8B%E4%B8%8EGC%E7%9B%B8%E5%85%B3%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%8F%82%E6%95%B0%EF%BC%9A"><span class="toc-number">1.5.1.</span> <span class="toc-text">查看与GC相关的虚拟机参数：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%B0%83%E4%BC%98%E9%A2%86%E5%9F%9F%EF%BC%9A"><span class="toc-number">1.5.2.</span> <span class="toc-text">调优领域：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A1%AE%E5%AE%9A%E7%9B%AE%E6%A0%87"><span class="toc-number">1.5.3.</span> <span class="toc-text">确定目标</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%80%E5%BF%AB%E7%9A%84GC%E6%98%AF%E4%B8%8D%E5%8F%91%E7%94%9FGC%EF%BC%88%E5%9B%A0%E4%B8%BA%E6%B2%A1%E6%9C%89stw%EF%BC%89"><span class="toc-number">1.5.4.</span> <span class="toc-text">最快的GC是不发生GC（因为没有stw）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B0%E7%94%9F%E4%BB%A3%E8%B0%83%E4%BC%98"><span class="toc-number">1.5.5.</span> <span class="toc-text">新生代调优</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%80%81%E5%B9%B4%E4%BB%A3%E8%B0%83%E4%BC%98%EF%BC%88CMS%E4%B8%BA%E4%BE%8B%EF%BC%89"><span class="toc-number">1.5.6.</span> <span class="toc-text">老年代调优（CMS为例）</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98"><span class="toc-number">2.</span> <span class="toc-text">直接内存</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98%E6%BA%A2%E5%87%BA%E9%97%AE%E9%A2%98"><span class="toc-number">2.1.</span> <span class="toc-text">直接内存溢出问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E5%92%8C%E5%9B%9E%E6%94%B6%E5%8E%9F%E7%90%86"><span class="toc-number">2.1.1.</span> <span class="toc-text">直接内存分配和回收原理</span></a></li></ol></li></ol></li></ol></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article" style="--smc-primary:#0078E7;"><link itemprop="mainEntityOfPage" href="http://cuican.life/2022/10/04/1004-jvm/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="Cuican Li"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="Hexo"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">【知识记录】JVM知识记录（下）<a class="post-edit-link" href="https://github.com/YunYouJun/yunyoujun.github.io/tree/hexo/source/_posts/1004-jvm.md" target="_blank" title="编辑" rel="noopener"><span class="icon iconify" data-icon="ri:edit-line"></span></a></h1><div class="post-meta"><div class="post-time"><span class="post-meta-item-icon"><span class="icon iconify" data-icon="ri:calendar-line"></span></span> <time title="创建时间：2022-10-04 16:14:03" itemprop="dateCreated datePublished" datetime="2022-10-04T16:14:03+08:00">2022-10-04</time></div><span class="leancloud_visitors" id="/2022/10/04/1004-jvm/" data-flag-title="【知识记录】JVM知识记录（下）"><span class="post-meta-divider">-</span><span class="post-meta-item-icon" title="阅读次数"><span class="icon iconify" data-icon="ri:eye-line"></span> <span class="leancloud-visitors-count"></span></span></span><span class="post-meta-divider">-</span><a href="#comment"><span class="post-meta-item-icon" title="评论数"><span class="icon iconify" data-icon="ri:chat-3-line"></span> <span class="waline-comment-count" id="/2022/10/04/1004-jvm/"></span></span></a><div class="post-classify"><span class="post-category"> <span class="post-meta-item-icon" style="margin-right:3px;"><span class="icon iconify" data-icon="ri:folder-line"></span></span><span itemprop="about" itemscope itemtype="https://schema.org/Thing"><a class="category-item" href="/categories/%E7%9F%A5%E8%AF%86/" style="--text-color:#fedd89" itemprop="url" rel="index"><span itemprop="text">知识</span></a></span></span><span class="post-tag"><span class="post-meta-divider">-</span><a class="tag-item" href="/tags/%E5%90%8E%E7%AB%AF/" style="--text-color:#fedd89"><span class="post-meta-item-icon"><span class="icon iconify" data-icon="ri:price-tag-3-line"></span></span><span class="tag-name">后端</span></a></span></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body"><h1 id="垃圾回收"><a href="#垃圾回收" class="headerlink" title="垃圾回收"></a>垃圾回收</h1><h2 id="如何判断对象可以回收"><a href="#如何判断对象可以回收" class="headerlink" title="如何判断对象可以回收"></a>如何判断对象可以回收</h2><h3 id="引用计数法"><a href="#引用计数法" class="headerlink" title="引用计数法"></a>引用计数法</h3><ul>
+<li>变量被其他对象引用了几次就计几次数，一个对象不再引用它了则计数-1，计数为0时就表示没有对象引用它了，可以作为垃圾被回收</li>
+<li>弊端：循环引用<br>  A引用B，B引用A，A和B计数都为1，但也都不能变成0，无法被回收，导致内存泄漏。</li>
+</ul>
+<h3 id="可达性分析法（JVM采用）"><a href="#可达性分析法（JVM采用）" class="headerlink" title="可达性分析法（JVM采用）"></a>可达性分析法（JVM采用）</h3><ul>
+<li>通俗解释：<ol>
+<li>确定根对象（即肯定不能当成垃圾被回收的对象）</li>
+<li>扫描所有对象，如果被根对象直接或间接引用就不能被垃圾回收，反之可以作为垃圾，将来会被回收</li>
+</ol>
+</li>
+<li>具体做法<br>  扫描堆中的对象，看是否能够沿着以GC Root对象为起点的引用链接找到该对象，找不到就表示可以被回收</li>
+<li>可以作为GC Root的对象<ul>
+<li>系统类：启动类加载器加载的类</li>
+<li>Native Stack（本地方法）：本地方法执行时用到的java对象</li>
+<li>busy monitor（锁）：被加锁的对象</li>
+<li>活动线程：线程中正在使用的对象，即java栈帧内使用的对象（比如局部变量引用的<strong>对象</strong>，<em>注意局部变量本身不算，它在栈里，不再堆里</em>）<blockquote>
+<p>Eclipse的Memory Analyzer(MAT)：堆分析工具<br>  先通过jmap抓取内存快照，再使用MAT，即：<br>  <code>jmap -dump:format=b,live,file=快照文件名.bin 线程id</code><br>  然后在MAT打开bin文件<br>  <em>注意：jmap的live是查看没有被回收的对象，所以带有该参数的jmap时会进行一次垃圾回收</em></p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="五种引用"><a href="#五种引用" class="headerlink" title="五种引用"></a>五种引用</h3><ul>
+<li>强引用<br>  一般我们创建的都是强引用<br>  只要沿着GC Root的引用链能找到它就不会被垃圾回收</li>
+<li>软引用<ul>
+<li>只要没有被强引用直接引用，就有可能被垃圾回收</li>
+<li><strong>当垃圾回收且内存不够</strong>，且没有其他强引用引用，就会把软引用引用的对象回收掉</li>
+<li><strong>可以配合</strong>引用队列：软引用引用的对象被回收后，软引用自身会进入到这个队列（为了释放软引用自身占用的内存，之所以使用队列是因为软引用自身可能被强引用引用着）</li>
+<li>应用：存储不太重要的占内存的资源，比如图片资源啥的，如：<br>  <code>List&lt;byte[]&gt; -&gt; List&lt;SoftReference&lt;byte[]&gt;&gt;</code>，防止堆内存溢出。<pre><code>List&lt;SoftReference&lt;byte[]&gt;&gt; list = new ArrayList&lt;&gt;();
+ReferenceQueue&lt;byte[]&gt; queue = new ReferenceQueue&lt;&gt;();
+while(...){
+    SoftReference&lt;byte[]&gt; ref = new SoftReference&lt;&gt;(new byte[n], queue); //关联软引用对象和引用队列：当软引用对象引用的byte数组被回收时，软引用自身就会被加入到quque中去
+    list.add(ref);
+}
+//从队列中获取无用的软引用并移除
+Reference&lt;? extends byte[]&gt; poll = queue.poll();
+while(poll != null){
+    list.remove(poll); //移除没用的软引用
+    poll = queue.poll();
+}
+</code></pre>
+</li>
+</ul>
+</li>
+<li>弱引用<ul>
+<li>只要没有被强引用直接引用，就有可能被垃圾回收</li>
+<li><strong>只要发生了垃圾回收</strong>，且没有其他强引用引用，就会把弱引用引用的对象回收掉</li>
+<li><strong>可以配合</strong>引用队列：弱引用引用的对象被回收后，弱引用自身会进入到这个队列（为了释放弱引用自身占用的内存，原因同上）</li>
+<li>应用：ThreadLocal中的ThreadLocalMap的key使用的是弱引用<blockquote>
+<p>为什么ThreadLocal中的ThreadLocalMap的key使用的是弱引用？<br>  参考：<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/304240519">https://zhuanlan.zhihu.com/p/304240519</a><br>  假设我们在A类的内部使用到了ThreadLocal，如果是强引用，当不调用A类的对象时，A对象被回收，但是其内部使用的ThreadLocal不会被回收，因为通过Thread -&gt; ThreadLocal.ThreadLocalMap -&gt; Entry[] -&gt; Enrty -&gt; key（threadLocal对象）和value这么一串调用，key还是强引用，但是已经访问不到了。<br>  综上，<strong>Entry的key被设计为弱引用就是为了让程序自动的对访问不到的数据进行回收提醒</strong>，所以，在访问不到的数据被回收之前，内存泄漏确实是存在的。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li>虚引用<ul>
+<li>（感觉就是为了在垃圾回收对象后做一些额外处理）</li>
+<li><strong>必须配合</strong>引用队列</li>
+<li>典型用法：处理bytebuffer这种对象，当没有强引用连接ByteBuffer时，ByteBuffer被回收，但它分配的直接内存还在，此时将虚引用Cleaner加入引用队列，当引用队列中的ReferenceHandler发现该虚引用后，调用Cleaner中的clean方法，通过直接内存地址找到被分配的直接内存并释放。</li>
+</ul>
+</li>
+<li>终结器引用<ul>
+<li>用于管理重写过finalize()的类的对象，finalize()用于执行一些对象回收前的清理工作，在jdk9时已过时</li>
+<li><strong>必须配合</strong>引用队列 </li>
+<li>若一个类重写了Object的finalize()方法，当没有强引用指向对象，对象准备被回收时，会先把终结器引用放入引用队列，再由一个优先级很低的线程（finalize hanlder）查看引用队列是否有终结器引用，若有，则根据终结器引用找到要被回收的对象，并且调用finalize()方法，调用完成后，<strong>下一次垃圾回收时</strong>就可以把该对象回收掉。=&gt;第一次回收入队，执行finalize()，执行后的下一次回收才真正回收，效率低（回收两次，finalize hanlder执行频率低），不建议使用finalize()</li>
+</ul>
+</li>
+</ul>
+<h2 id="垃圾回收算法"><a href="#垃圾回收算法" class="headerlink" title="垃圾回收算法"></a>垃圾回收算法</h2><p>JVM会结合不同情况采用以下三种垃圾回收算法</p>
+<h3 id="标记清除"><a href="#标记清除" class="headerlink" title="标记清除"></a>标记清除</h3><ul>
+<li>步骤<ol>
+<li>先标记<br>  判断哪些对象可以被回收</li>
+<li>后清除<br>  释放垃圾对象：<strong>只是将垃圾对象的起始地址和结束地址放在空闲列表中</strong>，不会对垃圾对象占用的内存进行清0处理</li>
+</ol>
+</li>
+<li>优点：速度快</li>
+<li>缺点：容易产生内存碎片<br><img src="/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%AE%97%E6%B3%95-%E6%A0%87%E8%AE%B0%E6%B8%85%E9%99%A4.png" title="垃圾回收算法-标记清除" loading="lazy"></li>
+</ul>
+<h3 id="标记整理"><a href="#标记整理" class="headerlink" title="标记整理"></a>标记整理</h3><ul>
+<li>步骤<ol>
+<li>先标记<br>  判断哪些对象可以被回收</li>
+<li>后整理<br>  整理原因：避免标记清除产生的内存碎片问题<br>  会把已用的内存空间进行<strong>紧凑</strong>，增大连续的内存空间</li>
+</ol>
+</li>
+<li>优点：内存碎片少</li>
+<li>缺点：内存空间会移动，速度慢<br><img src="/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%AE%97%E6%B3%95-%E6%A0%87%E8%AE%B0%E6%95%B4%E7%90%86.png" title="垃圾回收算法-标记整理" loading="lazy"></li>
+</ul>
+<h3 id="复制"><a href="#复制" class="headerlink" title="复制"></a>复制</h3><ul>
+<li>结构<br>划分大小相同的两块内存区：from和to，to中始终空闲</li>
+<li>步骤<ol>
+<li>标记<br>  判断哪些对象可以被回收</li>
+<li>复制<br>  把from中尚存的非垃圾对象复制到to区中，复制过程中完成整理（其实就是在to区中连续存放，反正to区是空的），复制完成后，清空from区，并且交换from和to的位置（from区变to区，to区变from区）</li>
+</ol>
+</li>
+<li>优点：不会产生碎片</li>
+<li>缺点：占用双倍内存空间<br><img src="/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%AE%97%E6%B3%95-%E5%A4%8D%E5%88%B6.png" title="垃圾回收算法-复制" loading="lazy"></li>
+</ul>
+<h2 id="分代垃圾回收机制"><a href="#分代垃圾回收机制" class="headerlink" title="分代垃圾回收机制"></a>分代垃圾回收机制</h2><h3 id="堆内存结构划分"><a href="#堆内存结构划分" class="headerlink" title="堆内存结构划分"></a>堆内存结构划分</h3><ul>
+<li>新生代<ul>
+<li>伊甸园</li>
+<li>幸存区<ul>
+<li>幸存区From</li>
+<li>幸存区To</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>老年代</li>
+</ul>
+<h3 id="划分原因"><a href="#划分原因" class="headerlink" title="划分原因"></a>划分原因</h3><p><strong>对象生命周期不同</strong>，需要长时间引用的对象放在老年代中，用完可以丢弃的对象放在新生代中，<strong>根据生命周期的特点可以采用不同的垃圾回收算法进行垃圾回收</strong></p>
+<h3 id="回收机制"><a href="#回收机制" class="headerlink" title="回收机制"></a>回收机制</h3><ol>
+<li>新创建的对象首先被分配在新生代的伊甸园中</li>
+<li>当放入新对象时，发现伊甸园占满，触发Minor GC<br> Minor GC采用复制算法：<ul>
+<li><p>第一次触发Minor GC，<strong>扫描伊甸区</strong>的对象，幸存的对象复制到To中，并且寿命+1，垃圾对象被回收，最后交换幸存区From和To的位置。</p>
+</li>
+<li><p>第二次触发Minor GC，<strong>扫描伊甸区和幸存From区</strong>的对象，幸存的对象复制到To中，并且寿命+1，垃圾对象被回收，最后交换幸存区From和To的位置。</p>
+</li>
+<li><p>此外，Minor GC会在工作中引发一次<strong>stop the world</strong>（stw，时间较短），会暂停其他用户线程，直到此次垃圾回收进行完了，用户线程才恢复运行。</p>
+</li>
+<li><p>晋升机制：</p>
+<ul>
+<li>情况1（长期存活的对象）：当对象的寿命超过一个阈值（最大寿命是15，4位（1111b）），就把它放到老年代去（飞升了~~~）</li>
+<li>情况2（担保机制）：新创建对象时，如果内存实在很紧张，新生代没地方了，会把这个新对象提前晋升到老年代</li>
+<li>情况3（大对象直接晋升老年代）：新生代地方肯定不够，老年代空间足够，直接晋升老年代，不会GC。<br>  怎么样算大对象可以通过<code>-XX:PretenureSizeThreshold=对象大小(单位：byte)</code>指定，该参数只对Serial和ParNew两款收集器有效</li>
+<li>情况4（动态对象年龄判定）：当幸存者空间中相同年龄所有对象占用的内存总和大于幸存者空间的一半，年龄大于或等于该年龄的对象就可以直接进入老年代，而不需要达到默认的分代年龄。</li>
+</ul>
+<p>  参考<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_27184497/article/details/117828331">https://blog.csdn.net/qq_27184497/article/details/117828331</a></p>
+</li>
+</ul>
+</li>
+<li>当放入新对象时，发现新生代和老年代的空间均不足，且Minor GC后新生代内存还是不够，触发Full GC<ul>
+<li>Full GC采用标记清除/标记整理</li>
+<li>Full GC也会引起stw，不过相对于Minor GC的stw而言时间更长(因为存活的对象比较多，如果采用标记整理的话时间会更长)</li>
+</ul>
+</li>
+<li>如果还不够，就OOM啦</li>
+</ol>
+<h3 id="相关虚拟机参数"><a href="#相关虚拟机参数" class="headerlink" title="相关虚拟机参数"></a>相关虚拟机参数</h3><ul>
+<li><p>-Xms：堆初始大小</p>
+</li>
+<li><p>-Xmx：堆最大大小</p>
+<blockquote>
+<p>ps：Xms和Xmx默认是相等的，若不等，JVM就会根据堆内存的使用情况，动态的向操作系统申请内存，扩大或者是缩小，以-Xmx和-Xms的值为上下界，这里的每一次调整都会产生一定的系统开销。<br>  参考：<a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_38106322/article/details/108197030">https://blog.csdn.net/weixin_38106322/article/details/108197030</a></p>
+</blockquote>
+</li>
+<li><p>-Xmn：新生代大小（初始和最大同时指定）</p>
+<ul>
+<li>-XX:NewSize=size 初始</li>
+<li>-XX:MaxNewSize=size 最大</li>
+</ul>
+</li>
+<li><p>-XX:InitialSurvivorRatio=ratio和-XX:+UseAdaptiveSizePolicy：幸存区比例（动态调整）</p>
+</li>
+<li><p>-XX:SurvivorRatio=ratio：幸存区比例，默认值为8（伊甸园占新生代的80%）</p>
+</li>
+<li><p>-XX:MaxTenuringThreshold=threshold：晋升阈值（默认和垃圾回收器有关）</p>
+</li>
+<li><p>-XX:+PrintTenuringDistribution：晋升详情</p>
+</li>
+<li><p>-XX:+PrintGCDetails -verbose:gc：GC详情</p>
+</li>
+<li><p>-XX:+ScavengeBeforeFullGC：FullGC前MinorGC（默认打开）</p>
+</li>
+</ul>
+<h3 id="实际GC分析"><a href="#实际GC分析" class="headerlink" title="实际GC分析"></a>实际GC分析</h3><ul>
+<li>若给新生代划分10M，伊甸园占8M，新生区from、to各占1M，此时打印日志会显示新生区共占9M（因为to区那1M不能用）</li>
+<li>线程内的OOM不会影响其他线程运行</li>
+</ul>
+<h2 id="垃圾回收器"><a href="#垃圾回收器" class="headerlink" title="垃圾回收器"></a>垃圾回收器</h2><h3 id="串行"><a href="#串行" class="headerlink" title="串行"></a>串行</h3><ul>
+<li>单线程垃圾回收器</li>
+<li>适用场景：堆内存较小，适合个人电脑CPU个数少的</li>
+<li>开启参数：-XX:+UseSerialGC </li>
+<li>两个部分：Serial和SerialOld两个垃圾回收器分别运行<ul>
+<li>Serial<br>  工作在新生代，采用复制算法</li>
+<li>SerialOld<br>  工作在老年代，采用标记+整理算法</li>
+</ul>
+</li>
+<li>工作模式<br><img src="/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8-%E4%B8%B2%E8%A1%8C.png" title="垃圾回收器-串行" loading="lazy"></li>
+</ul>
+<h3 id="吞吐量优先（1-8默认）"><a href="#吞吐量优先（1-8默认）" class="headerlink" title="吞吐量优先（1.8默认）"></a>吞吐量优先（1.8默认）</h3><ul>
+<li><p>多线程垃圾回收器</p>
+</li>
+<li><p>适用场景：堆内存较大，需要多核CPU支持，适合工作在服务器上</p>
+</li>
+<li><p>目标：让单位时间内，stw的时间最短（单次stw时间时间可能比较长，如1小时内只发生两次stw，一次0.2，一小时中stw的时间为0.4）</p>
+</li>
+<li><p>开启参数：<code>-XX:+UseParallelGC和-XX:+UseParallelOldGC</code> （两个参数在1.8默认开启，开启一个就会把两个都打开）</p>
+</li>
+<li><p>工作模式</p>
+</li>
+<li><p>垃圾回收线程个数和CPU核数相关，<strong>垃圾回收时CPU占用率会直接飙到100%</strong><br>  垃圾回收线程数可通过<code>-XX:ParallelGCThreads=n</code>来控制（默认就是CPU核心数）<br><img src="/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8-%E5%90%9E%E5%90%90%E9%87%8F%E4%BC%98%E5%85%88.png" title="垃圾回收器-吞吐量优先" loading="lazy"></p>
+</li>
+<li><p>可以根据目标设置垃圾回收器的回收方式<br>  与之相关参数：</p>
+<ul>
+<li><code>-XX:+UseAdaptiveSizePolicy</code> 动态调整新生代大小、伊甸园和幸存者区域比例、堆大小、晋升阈值<ul>
+<li>目标1：<code>-XX:GCTimeRatio=ratio</code> 垃圾回收时间和总时间的占比 <code>1/(1+ratio)</code> <ul>
+<li>默认ratio=99，即总时间中只有1%的时间会进行垃圾回收，如果超过这个时间，jvm就会调整策略（比如增加堆的大小）</li>
+<li>一般设置成ratio=19，即5%的时间进行垃圾回收</li>
+</ul>
+</li>
+<li>目标2：<code>-XX:MaxGCPauseMillis=ms</code> 执行单次垃圾回收的时间<ul>
+<li>默认值是200ms  </li>
+<li>若执行垃圾回收超过这个时间，jvm就会调整策略（比如减小堆的大小）</li>
+<li>这个目标和目标1冲突，因为目标1调整后堆大了，那么垃圾回收的时间也会增长</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="响应时间优先CMS"><a href="#响应时间优先CMS" class="headerlink" title="响应时间优先CMS"></a>响应时间优先CMS</h3><ul>
+<li>多线程垃圾回收器</li>
+<li>适用场景：堆内存较大，需要多核CPU支持，适合工作在服务器上</li>
+<li>目标：让单次stw时间尽可能短（1小时内发生五次stw，一次0.1，一小时中stw时间为0.5，虽然总时间长，但单次短）</li>
+<li>开启参数：<code>-XX:+UseConcMarkSweepGC</code>（CMS，并发标记清除GC，该并发表示GC和其他用户线程并发执行，工作在老年代，若并发失败，CMS垃圾回收器会退化成SerialOld）和<code>-XX:+UseParNewGC</code>（工作在新生代，基于复制算法）</li>
+<li>工作模式<ul>
+<li>并行垃圾回收线程数可通过<code>-XX:ParallelGCThreads=n</code>来控制（默认就是CPU核心数）</li>
+<li>并发垃圾回收线程数可通过<code>-XX:ConcGCThreads=threads</code>（默认是(ParallelGCThreads+3)/4）</li>
+<li>CMS垃圾回收器CPU占用率不高，但是会影响应用程序的吞吐量（因为有一个CPU核被GC占用了）</li>
+<li>浮动垃圾：清理并发清理时，其他用户线程产生的新垃圾</li>
+<li>不能在堆内存不足时做垃圾回收，因为CMS GC和用户线程并发执行，需要给用户线程预留内存空间支持用户线程执行，通过<code>-XX:CMSInitialtingOccupancyFraction=percent</code>调节垃圾回收时间（如设置成80就表示老年代占用了80%的空间时执行一次CMS）</li>
+<li>可能有新生代的对象引用了老年代的对象，在重新标记阶段影响大（因为新生代垃圾多，有可能那个新生代对象就是垃圾），通过<code>-XX:+CMSScavengeBeforeRemark</code>在重新标记前对新生代对象进行一次垃圾回收</li>
+<li>CMS采用标记清理算法，若老年代内存碎片过多，会导致并发失败，会退化为SerialOld，做一次串行的GC进行标记整理（垃圾回收时间会一下子飚上来。。。）<br><img src="/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8-%E5%93%8D%E5%BA%94%E6%97%B6%E9%97%B4%E4%BC%98%E5%85%88.png" title="垃圾回收器-响应时间优先" loading="lazy"></li>
+</ul>
+</li>
+</ul>
+<h3 id="G1垃圾回收器（JDK9默认）"><a href="#G1垃圾回收器（JDK9默认）" class="headerlink" title="G1垃圾回收器（JDK9默认）"></a>G1垃圾回收器（JDK9默认）</h3><ul>
+<li>JDK9废弃了CMS GC</li>
+<li>适用场景<ul>
+<li>同时注重吞吐量和低延迟，默认暂停目标是200ms，可以通过<code>-XX:MaxGCPauseMillis=time</code>调整，time变大了那吞吐量更高</li>
+<li>适合堆内存超大的服务器，会将堆划分为多个大小相等的Region</li>
+<li><strong>整体上是标记+整理算法，两个区域之间是复制算法</strong></li>
+</ul>
+</li>
+<li>开启参数<br>  JDK7和8需要使用，JDK9及之后默认开启<br>  <code>-XX:+UseG1GC</code></li>
+</ul>
+<h4 id="G1垃圾回收器的分区"><a href="#G1垃圾回收器的分区" class="headerlink" title="G1垃圾回收器的分区"></a>G1垃圾回收器的分区</h4><ul>
+<li>G1垃圾回收器将堆划分为多个大小相等的Region，<strong>每个Region都可以独立的作为伊甸园、幸存区或老年代</strong>，可以通过<code>-XX:G1HeapRegionSize=size</code>调整。（比如可能有4个伊甸园，2个幸存区，8个老年代）</li>
+<li>伊甸园E、幸存区S、老年代O、巨型对象H（后边细说）</li>
+</ul>
+<h4 id="G1垃圾回收阶段（循环过程）"><a href="#G1垃圾回收阶段（循环过程）" class="headerlink" title="G1垃圾回收阶段（循环过程）"></a>G1垃圾回收阶段（循环过程）</h4><ol>
+<li>阶段1：新生代垃圾回收<br> 当老年代内存超过一定阈值，转到阶段2</li>
+<li>阶段2：新生代垃圾回收+并发标记<br> 阶段2完成后转到阶段3</li>
+<li>阶段3：混合回收<br> 对新生代和老年代都进行垃圾回收，内存释放掉后转向阶段1</li>
+</ol>
+<h4 id="新生代垃圾回收"><a href="#新生代垃圾回收" class="headerlink" title="新生代垃圾回收"></a>新生代垃圾回收</h4><p><strong>会STW</strong><br>划分区域中的伊甸园区被占满，触发新生代垃圾回收，依靠复制算法把幸存对象复制到幸存区，幸存区晋升老年代还是和以前一样。</p>
+<h4 id="新生代垃圾回收-并发标记（CM-Concurrent-Marking"><a href="#新生代垃圾回收-并发标记（CM-Concurrent-Marking" class="headerlink" title="新生代垃圾回收+并发标记（CM,Concurrent Marking)"></a>新生代垃圾回收+并发标记（CM,Concurrent Marking)</h4><ul>
+<li>在新生代垃圾回收时进行GC Root初始标记</li>
+<li>老年代占用堆空间比例达到阈值时，进行并发标记（<strong>不会STW</strong>），由参数<code>-XX:InitiatingHeapOccupancyPercent=percent</code>决定（默认45，即占老年代占堆空间的45%时触发并发标记)</li>
+</ul>
+<h4 id="混合回收"><a href="#混合回收" class="headerlink" title="混合回收"></a>混合回收</h4><ul>
+<li>对E、S、O进行全面垃圾回收<ul>
+<li>E：就是之前的复制算法</li>
+<li>S：有的S会把年龄不够的复制到别的S中，年龄到阈值的复制到老年代</li>
+<li>O：根据规定的最大GC时间，会将最具回收价值的垃圾区域进行回收，并把该区域中存活的对象拷贝到别的O中，达到整理内存减少空间碎片的效果。（如果把所有的O都回收一遍还能再最大GC时间内就会全拷贝一遍）<br><img src="/image/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8-G1%E6%B7%B7%E5%90%88%E9%98%B6%E6%AE%B5.png" title="混合回收" loading="lazy"></li>
+</ul>
+</li>
+<li>两个阶段<ul>
+<li>最终标记 <strong>会STW</strong><br>  就是那个remark，标记并发标记时漏掉的垃圾</li>
+<li>拷贝存活 <strong>会STW</strong><br>  就是ESO的存活对象拷贝（注意不是所有老年代的垃圾都会被回收哦）</li>
+</ul>
+</li>
+</ul>
+<h3 id="Full-GC和Minor-GC总结辨析"><a href="#Full-GC和Minor-GC总结辨析" class="headerlink" title="Full GC和Minor GC总结辨析"></a>Full GC和Minor GC总结辨析</h3><ul>
+<li>新生代内存不足发生的垃圾收集<ul>
+<li>Serial GC、ParallelGC、CMS、G1<br>  均采用minor GC</li>
+</ul>
+</li>
+<li>老年代内存不足发生的垃圾收集<ul>
+<li>Serial GC、ParallelGC<br>  均采用full GC</li>
+<li>CMS<br>  到达阈值：并发回收/Full GC<ul>
+<li>老年代内存不足导致Full GC，具体原因有：<ul>
+<li>promotion failed：晋升失败，Minor GC过程中同时有对象要放入老年代，而此时老年代空间不足</li>
+<li>concurrent mode failure：并发模式失败<ul>
+<li>产生新垃圾的速度&gt;并发垃圾回收速度（执行CMS GC的过程中同时有对象要放入老年代，而此时老年代空间不足）</li>
+<li>还有一种可能是老年代碎片太多</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>G1<br>  到达阈值：并发回收/Full GC<ul>
+<li>产生新垃圾的速度&lt;并发垃圾回收速度：并发垃圾回收</li>
+<li>产生新垃圾的速度&gt;并发垃圾回收速度：并发垃圾回收失败，退化为Serial GC，执行Full GC</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="新生代垃圾回收跨代引用（老年代引用新生代）"><a href="#新生代垃圾回收跨代引用（老年代引用新生代）" class="headerlink" title="新生代垃圾回收跨代引用（老年代引用新生代）"></a>新生代垃圾回收跨代引用（老年代引用新生代）</h3><ul>
+<li>原因：Minor GC要进行GC Root扫描，可能有些GC Root在老年代中，但是老年代对象太多了，全扫描效率低</li>
+<li>解决：卡表+Remembered Set 提高GC Root扫描效率，加速新生代垃圾回收<ul>
+<li>O中的卡表（每个512KB）：如果一个卡中的对象引用了新生代对象，就标记为脏卡。因此进行GC Root扫描时在老年代只需要扫描老年代的脏卡，提高效率。</li>
+<li>E中的Remembered Set：记录外部有哪些脏卡。因此E可以知道对应了哪些脏卡，只去对应的脏卡进行扫描即可。</li>
+</ul>
+</li>
+<li>标记脏卡是在每次对象引用变更时进行（post-write barrier)，这是一个异步操作，会把更新指令放到dirty card queue中，将来由一个线程执行（异步队列~）<br><img src="/image/G1-%E8%B7%A8%E4%BB%A3%E5%BC%95%E7%94%A8.png" title="跨代引用" loading="lazy"></li>
+</ul>
+<h3 id="重标记Remark"><a href="#重标记Remark" class="headerlink" title="重标记Remark"></a>重标记Remark</h3><ul>
+<li>并发标记过程（三色标记法）：<br>把对象处理一遍，最后还被标为白色的对象就是垃圾<br><img src="/image/G1-%E9%87%8D%E6%96%B0%E6%A0%87%E8%AE%B0.png" title="重新标记" loading="lazy"></li>
+<li>问题：<br>GC与用户线程并发，可能并发标记进行时，白色的垃圾又被黑色的对象引用了</li>
+<li>解决：重新标记</li>
+<li>写屏障post-write barrier：如果一个垃圾的引用发生改变，触发写屏障，此时会将垃圾对象加入到队列satb_mark_queue中，颜色标记为灰色（正在处理）。等到并发标记结束后，发生stw，然后重新标记线程会对队列重新进行一次检查，如果发现有强引用还在引用队列里的对象，该对象会被重新标为黑色。</li>
+</ul>
+<h3 id="G1优化"><a href="#G1优化" class="headerlink" title="G1优化"></a>G1优化</h3><h4 id="JDK-8u20-字符串去重"><a href="#JDK-8u20-字符串去重" class="headerlink" title="JDK 8u20 字符串去重"></a>JDK 8u20 字符串去重</h4><ul>
+<li>参数（默认打开）：-XX:+UseStringDeduplication</li>
+<li>步骤<ol>
+<li>将所有新分配的字符串放入一个队列</li>
+<li>当新生代回收时，G1并发检查是否有字符串重复，有重复则让它们引用一个相同的char[]</li>
+</ol>
+</li>
+<li>优点：节省大量内存</li>
+<li>缺点：略微多占用了cpu空间，新生代回收时间略微增加</li>
+<li>与intern()的区别<ul>
+<li>intern()关注的是字符串对象，G1关注的是底层的char[]</li>
+<li>intern()是使用的StringTable</li>
+</ul>
+</li>
+</ul>
+<h4 id="JDK-8u40-并发标记时的类卸载"><a href="#JDK-8u40-并发标记时的类卸载" class="headerlink" title="JDK 8u40 并发标记时的类卸载"></a>JDK 8u40 并发标记时的类卸载</h4><ul>
+<li>参数（默认打开）：-XX:+ClassUnloadingWithConcurrentMark</li>
+<li>所有对象都经过并发标记后，就能知道哪些类不再使用，当一个<strong>类加载器的所有类都不再使用</strong>，则卸载它加载的所有类（适合写了自定义类加载器的框架程序）</li>
+</ul>
+<h4 id="JDK-8u40-回收巨型对象"><a href="#JDK-8u40-回收巨型对象" class="headerlink" title="JDK 8u40 回收巨型对象"></a>JDK 8u40 回收巨型对象</h4><ul>
+<li>巨型对象：对象大小超过region的一半的对象</li>
+<li>一个巨型对象可以占用好几个Region，用H表示</li>
+<li>回收机制<ul>
+<li>G1不会对巨型对象进行拷贝，G1进行GC时会优先考虑巨型对象</li>
+<li>老年代中引用了巨型对象的卡也会被标记成脏卡</li>
+<li>G1会跟踪巨型对象的老年代引用（即incoming引用），当某个巨型对象的老年代引用为0时，该对象就可以在<strong>新生代的垃圾回收</strong>中被回收掉</li>
+</ul>
+</li>
+</ul>
+<h4 id="JDK9并发标记起始时间调整"><a href="#JDK9并发标记起始时间调整" class="headerlink" title="JDK9并发标记起始时间调整"></a>JDK9并发标记起始时间调整</h4><ul>
+<li>原因：并发标记必须在堆空间占满前完成，否则退化为Full GC，为减少Full GC发生几率，JDK9开始动态调整并发标记开始时间</li>
+<li>JDK9之前：静态：-XX:InitiatingHeapOccupancyPercent（默认45%）<br>  该参数定大了会频繁发生Full GC，定小了会频繁做并发标记和混合收集</li>
+<li>JDK9之后：动态调整阈值<ul>
+<li>-XX:InitiatingHeapOccupancyPercent 设置初始值</li>
+<li>进行数据采样并动态调整InitiatingHeapOccupancyPercent阈值</li>
+<li>添加一个安全空档时间（容纳浮动垃圾）</li>
+</ul>
+</li>
+</ul>
+<h2 id="垃圾回收调优"><a href="#垃圾回收调优" class="headerlink" title="垃圾回收调优"></a>垃圾回收调优</h2><h3 id="查看与GC相关的虚拟机参数："><a href="#查看与GC相关的虚拟机参数：" class="headerlink" title="查看与GC相关的虚拟机参数："></a>查看与GC相关的虚拟机参数：</h3><p><code>-XX:+PrintFlagsFinal -version | findstr "GC"</code></p>
+<h3 id="调优领域："><a href="#调优领域：" class="headerlink" title="调优领域："></a>调优领域：</h3><ul>
+<li>GC：影响网络延迟</li>
+<li>内存</li>
+<li>io</li>
+<li>CPU占用</li>
+<li>锁</li>
+</ul>
+<h3 id="确定目标"><a href="#确定目标" class="headerlink" title="确定目标"></a>确定目标</h3><p>根据低延迟/高吞吐量，选择合适的回收器</p>
+<ul>
+<li>低延迟：CMS/<strong>G1</strong>/ZGC</li>
+<li>高吞吐量：ParallelGC/G1</li>
+</ul>
+<h3 id="最快的GC是不发生GC（因为没有stw）"><a href="#最快的GC是不发生GC（因为没有stw）" class="headerlink" title="最快的GC是不发生GC（因为没有stw）"></a>最快的GC是不发生GC（因为没有stw）</h3><p>经常发生GC原因：</p>
+<ul>
+<li>数据太多？<br>  比如<code>resultSet = statement.executeQuery("select * from 大表")</code>数据太多导致堆内存频繁溢出，应在sql加一个<code>limit</code>限制数据个数</li>
+<li>数据臃肿？<ul>
+<li>数据库直接联查，查询了一些不用的东西</li>
+<li>对象大小 比如使用了好多Integer，换成基本类型可以节约内存</li>
+</ul>
+</li>
+<li>内存泄漏？<ul>
+<li>定义了静态map，对于这种长时间存活对象可以采用软/弱引用，这种缓存的话可以借用第三方缓存实现</li>
+</ul>
+</li>
+</ul>
+<h3 id="新生代调优"><a href="#新生代调优" class="headerlink" title="新生代调优"></a>新生代调优</h3><ul>
+<li>新生代特点<ul>
+<li>所有new操作的内存分配都很廉价<ul>
+<li>TLAB(thread-local allocation buffer)创建对象会先存入本地内存</li>
+</ul>
+</li>
+<li>死亡对象回收代价是0（复制算法）</li>
+<li>大部分对象用过即死</li>
+<li>上边两点使得Minor GC的时间远低于Full GC</li>
+</ul>
+</li>
+<li>调优方式<ul>
+<li>把新生代调节的尽可能大：-Xmn（新生代初始和最大空间） 占到整个堆的25%-50%最佳<ul>
+<li>太小：频繁回收</li>
+<li>太大：老年代空间就小了，full gc将会频繁触发，会占用更长时间进行垃圾回收</li>
+<li>调大原因：Minor GC主要耗费的时间在复制上，因为大部分对象用过即死，只有小部分存活，即只有小部分对象需要复制，所以即使新生代占了很大的空间，效率也不会下降到哪里去</li>
+<li>新生代能容纳所有<code>并发量 * （请求响应过程中产生的对象）</code>的数据最佳</li>
+</ul>
+</li>
+<li>幸存区调优<ul>
+<li>要大到能保留<code>当前活跃的对象+需要晋升的对象</code><ul>
+<li>原因：幸存区的内存太少可能会提前把存活时间短的对象晋升到老年代，等到full gc的时候才能把它回收，延长了没用对象的存活时间</li>
+</ul>
+</li>
+<li>晋升阈值配置得当，让长时间存活对象尽快晋升<ul>
+<li>原因：减少复制算法的时间</li>
+</ul>
+<pre><code>-XX:MaxTenuringThreshold=threshold //晋升阈值
+-XX:+PrintTeuringDistribution //在GC时显示幸存区的对象信息（年龄占用的空间数）
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="老年代调优（CMS为例）"><a href="#老年代调优（CMS为例）" class="headerlink" title="老年代调优（CMS为例）"></a>老年代调优（CMS为例）</h3><ul>
+<li>CMS的老年代内存越大越好<ul>
+<li>预留更多的空间给并发时的用户线程，避免浮动垃圾引起的并发失败</li>
+</ul>
+</li>
+<li>先尝试不做调优，如果没有full gc说明不用调，否则先尝试调优新生代</li>
+<li>新生代条调过还不行，就观察发生full gc时老年代内存占用，看看是占用多大内存发生了full gc，在此基础上将老年代内存预设调大1/4~1/3</li>
+</ul>
+<pre><code>-XX:CMSInitiatingOccupancyFraction=percent //老年代空间占用percent时进行垃圾回收（一般75%-80%）
+</code></pre>
+<h1 id="直接内存"><a href="#直接内存" class="headerlink" title="直接内存"></a>直接内存</h1><ul>
+<li>是<strong>操作系统</strong>的内存而不是java内存，但可以被java内存直接访问</li>
+<li>常用于NIO操作，用于数据缓冲区<ul>
+<li>ByteBuffer.allocateDirect(int capacity)</li>
+<li>如果不采用直接内存的话，要先从磁盘文件读到系统内存，再从系统内存读到Java堆内存</li>
+</ul>
+</li>
+<li>分配和回收成本高，但读写性能高</li>
+<li>不受JVM内存回收管理</li>
+</ul>
+<h2 id="直接内存溢出问题"><a href="#直接内存溢出问题" class="headerlink" title="直接内存溢出问题"></a>直接内存溢出问题</h2><p>OOM: Direct buffer memory</p>
+<h3 id="直接内存分配和回收原理"><a href="#直接内存分配和回收原理" class="headerlink" title="直接内存分配和回收原理"></a>直接内存分配和回收原理</h3><ul>
+<li>直接内存的分配和回收是通过Unsafe类实现的，回收时需要主动调用freeMemory方法，而不是通过java垃圾回收实现</li>
+<li>ByteBuffer的实现类内部，使用了Cleaner（虚引用）来监测ByteBuffer对象，一旦ByteBuffer对象被垃圾回收，那么就会由ReferenceHandler线程通过Cleaner的clean方法调用freeMemory来释放直接内存。</li>
+</ul>
+<blockquote>
+<p>Cleaner<br>是一个虚引用对象，当该虚引用对象关联的ByteBuffer要被回收时，会触发Cleaner对象中的clean方法，clean方法执行一个任务对象，在任务对象中，会调用unsafe.freeMemory(long address)把直接内存的空间释放掉</p>
+</blockquote>
+<blockquote>
+<p>-XX:+DisableExplicitGC：禁用显式垃圾回收<br>显示垃圾回收指的是代码的System.gc()，该方法会触发full gc，会对性能产生影响。<br>禁用显式垃圾回收的话<strong>对直接内存有影响</strong>，System.gc()被禁用后只有等到真正的垃圾回收发生时才会回收ByteBuffer，直接内存占据的空间才会被释放掉</p>
+</blockquote>
+<p>直接内存管理方式（释放）：利用反射机制获取Unsafe对象unsafe，通过unsafe.freeMemory(long address)释放本地内存。（long address是unsafe.allocateMemory(int capacity)的返回值）</p>
+</div></section><div id="reward-container"><span class="hty-icon-button button-glow" id="reward-button" title="打赏" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === &quot;none&quot;) ? &quot;block&quot; : &quot;none&quot;;"><span class="icon iconify" data-icon="ri:hand-coin-line"></span></span><div id="reward-comment">I'm so cute. Please give me money.</div></div><ul class="post-copyright"><li class="post-copyright-author"><strong>本文作者：</strong>Cuican Li</li><li class="post-copyright-link"><strong>本文链接：</strong><a href="http://cuican.life/2022/10/04/1004-jvm/" title="【知识记录】JVM知识记录（下）">http://cuican.life/2022/10/04/1004-jvm/</a></li><li class="post-copyright-license"><strong>版权声明：</strong>本博客所有文章除特别声明外，均默认采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><span class="icon iconify" data-icon="ri:creative-commons-line"></span><span class="icon iconify" data-icon="ri:creative-commons-by-line"></span><span class="icon iconify" data-icon="ri:creative-commons-nc-line"></span><span class="icon iconify" data-icon="ri:creative-commons-sa-line"></span></a> 许可协议。</li></ul></article><div class="post-nav"><div class="post-nav-item"><a class="post-nav-prev" href="/2022/11/03/1103-fabric-devmode/" rel="prev" title="Fabric的Dev模式初探"><span class="icon iconify" data-icon="ri:arrow-left-s-line"></span><span class="post-nav-text">Fabric的Dev模式初探</span></a></div><div class="post-nav-item"><a class="post-nav-next" href="/2022/09/26/0911-jvm/" rel="next" title="【知识记录】JVM知识记录（中）"><span class="post-nav-text">【知识记录】JVM知识记录（中）</span><span class="icon iconify" data-icon="ri:arrow-right-s-line"></span></a></div></div></div><div class="hty-card" id="comment"><div id="waline"></div><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@waline/client@v2/dist/waline.css"><script>window.CONFIG.waline.config.path = "/2022/10/04/1004-jvm/"</script><div class="js-Pjax"><script src="/js/comments/waline.js" type="module" defer></script></div></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2019 – 2023 </span><span class="with-love" id="animate"><span class="icon iconify" data-icon="ri:cloud-line"></span></span><span class="author"> Cuican Li</span></div><div class="powered"><span>由 <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> 驱动 v6.3.0</span><span class="footer-separator">|</span><span>主题 - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.10.9</span></div></footer></div><a class="hty-icon-button" id="back-to-top" aria-label="back-to-top" href="#"><span class="icon iconify" data-icon="ri:arrow-up-s-line"></span><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#0078E7" stroke-width="2" stroke-linecap="round"></circle></svg></a><a class="popup-trigger hty-icon-button icon-search" id="search" href="javascript:;" title="搜索"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:search-line"></span></span></a><script>window.addEventListener("DOMContentLoaded", () => {
+  // Handle and trigger popup window
+  document.querySelector(".popup-trigger").addEventListener("click", () => {
+    document.querySelector(".popup").classList.add("show");
+    setTimeout(() => {
+      document.querySelector(".search-input").focus();
+    }, 100);
+  });
+
+  // Monitor main search box
+  const onPopupClose = () => {
+    document.querySelector(".popup").classList.remove("show");
+  };
+
+  document.querySelector(".popup-btn-close").addEventListener("click", () => {
+    onPopupClose();
+  });
+
+  window.addEventListener("keyup", event => {
+    if (event.key === "Escape") {
+      onPopupClose();
+    }
+  });
+});
+</script><script defer src="https://fastly.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script><script defer src="https://fastly.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script><script defer src="/js/search/algolia-search.js" type="module"></script><div class="popup search-popup"><div class="search-header"><span class="popup-btn-close close-icon hty-icon-button"><span class="icon iconify" data-icon="ri:close-line"></span></span></div><div class="search-input-container"></div><div class="algolia-results"><div id="algolia-stats"></div><div id="algolia-hits"></div><div class="algolia-pagination" id="algolia-pagination"></div></div></div><script src="https://fastly.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js"></script><script>const images = [...document.querySelectorAll('.markdown-body img')]
+mediumZoom(images)</script><style>.medium-zoom-image {
+  z-index: 99;
+}</style></body></html>

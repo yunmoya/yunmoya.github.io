@@ -1,0 +1,695 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0078E7"><meta name="author" content="Cuican Li"><meta name="copyright" content="Cuican Li"><meta name="generator" content="Hexo 6.3.0"><meta name="theme" content="hexo-theme-yun"><title>【知识记录】JVM知识记录（上） | Hexo</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@900&amp;display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/star-markdown-css@0.4.1/dist/yun/yun-markdown.min.css"><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/prism-theme-vars/base.css"><script src="https://fastly.jsdelivr.net/npm/scrollreveal/dist/scrollreveal.min.js" defer></script><script>function initScrollReveal() {
+  [".post-card",".markdown-body img"].forEach((target)=> {
+    ScrollReveal().reveal(target);
+  })
+}
+document.addEventListener("DOMContentLoaded", initScrollReveal);
+document.addEventListener("pjax:success", initScrollReveal);
+</script><link rel="icon" type="image/svg+xml" href="/yun.svg"><link rel="mask-icon" href="/yun.svg" color="#0078E7"><link rel="preload" href="/css/hexo-theme-yun.css" as="style"><link rel="prefetch" href="/js/sidebar.js" as="script"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fastly.jsdelivr.net/npm/" crossorigin><script id="yun-config">
+    window.Yun = {}
+    window.CONFIG = {"hostname":"cuican.life","root":"/","title":"灿的小站","version":"1.10.9","mode":"auto","copycode":true,"page":{"isPost":true},"i18n":{"placeholder":"搜索...","empty":"找不到您查询的内容: ${query}","hits":"找到 ${hits} 条结果","hits_time":"找到 ${hits} 条结果（用时 ${time} 毫秒）"},"anonymous_image":"https://cdn.yunyoujun.cn/img/avatar/none.jpg","say":{"api":"https://el-bot-api.vercel.app/api/words/young"},"algolia":{"hits":{"per_page":8}},"fireworks":{"colors":null},"waline":{"config":{"enable":true,"serverURL":"https://waline.yunyoujun.cn","comment":true,"visitor":true,"emoji":["https://fastly.jsdelivr.net/gh/walinejs/emojis@latest/bilibili/","https://fastly.jsdelivr.net/gh/walinejs/emojis@latest/weibo/","https://fastly.jsdelivr.net/gh/walinejs/emojis@latest/qq/"],"locale":{"placeholder":"填写邮箱，可以收到回复通知哦～"},"requiredMeta":["nick"],"el":"#waline","lang":"zh-CN"},"cdn":"https://fastly.jsdelivr.net/npm/@waline/client@v2/dist/waline.js","dark":"html.dark"},"vendors":{"host":"https://fastly.jsdelivr.net/npm/","darken":"https://fastly.jsdelivr.net/npm/darken@1.5.0"}};
+  </script><link rel="stylesheet" href="/css/hexo-theme-yun.css"><script src="/js/hexo-theme-yun.js" type="module"></script><link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml"><link rel="preconnect" href="https://www.google-analytics.com" crossorigin><script async src="https://www.googletagmanager.com/gtag/js?id=G-1LL0D86CY9"></script><script>if (CONFIG.hostname === location.hostname) {
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-1LL0D86CY9');
+}</script><script data-ad-client="ca-pub-2245427233262012" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script><script>(function(){
+  var bp = document.createElement('script');
+  var curProtocol = window.location.protocol.split(':')[0];
+  if (curProtocol === 'https') {
+    bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+  }
+  else {
+    bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+  }
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(bp, s);
+})();</script><!-- Google Tag Manager --><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M9KWR9L');</script><!-- End Google Tag Manager --><meta name="description" content="虚拟机概述、字节码相关、类加载器">
+<meta property="og:type" content="article">
+<meta property="og:title" content="【知识记录】JVM知识记录（上）">
+<meta property="og:url" content="http://cuican.life/2022/09/10/0904-jvm/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="虚拟机概述、字节码相关、类加载器">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://cuican.life/images/knowledge/jvm/JVM%E8%B7%A8%E8%AF%AD%E8%A8%80%E5%B9%B3%E5%8F%B0.png">
+<meta property="og:image" content="http://cuican.life/images/knowledge/jvm/JVM%E4%BD%8D%E7%BD%AE.png">
+<meta property="og:image" content="http://cuican.life/images/knowledge/jvm/JVM%E7%BB%93%E6%9E%84.png">
+<meta property="og:image" content="http://cuican.life/images/knowledge/jvm/Java%E7%A8%8B%E5%BA%8F%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B.png">
+<meta property="og:image" content="http://cuican.life/images/knowledge/jvm/finally%E5%AD%97%E8%8A%82%E7%A0%81.png">
+<meta property="og:image" content="http://cuican.life/images/knowledge/jvm/%E6%9E%9A%E4%B8%BE%E7%B1%BB.png">
+<meta property="og:image" content="http://cuican.life/images/knowledge/jvm/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84.png">
+<meta property="og:image" content="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%BC%8F.png">
+<meta property="og:image" content="http://cuican.life/images/knowledge/jvm/%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%BC%8F%E5%AE%89%E5%85%A8%E6%8A%A5%E9%94%991.png">
+<meta property="og:image" content="http://cuican.life/images/knowledge/jvm/%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%BC%8F%E5%AE%89%E5%85%A8%E6%8A%A5%E9%94%992.png">
+<meta property="article:published_time" content="2022-09-10T14:43:37.000Z">
+<meta property="article:modified_time" content="2022-09-26T15:52:30.933Z">
+<meta property="article:author" content="Cuican Li">
+<meta property="article:tag" content="后端">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://cuican.life/images/knowledge/jvm/JVM%E8%B7%A8%E8%AF%AD%E8%A8%80%E5%B9%B3%E5%8F%B0.png"><script>(function() {
+  if (CONFIG.mode !== 'auto') return
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  const setting = localStorage.getItem('darken-mode') || 'auto'
+  if (setting === 'dark' || (prefersDark && setting !== 'light'))
+    document.documentElement.classList.toggle('dark', true)
+})()</script>
+<style>.github-emoji { position: relative; display: inline-block; width: 1.2em; min-height: 1.2em; overflow: hidden; vertical-align: top; color: transparent; }  .github-emoji > span { position: relative; z-index: 10; }  .github-emoji img, .github-emoji .fancybox { margin: 0 !important; padding: 0 !important; border: none !important; outline: none !important; text-decoration: none !important; user-select: none !important; cursor: auto !important; }  .github-emoji img { height: 1.2em !important; width: 1.2em !important; position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; user-select: none !important; cursor: auto !important; } .github-emoji-fallback { color: inherit; } .github-emoji-fallback img { opacity: 0 !important; }</style>
+</head><body><script src="https://code.iconify.design/2/2.1.1/iconify.min.js"></script><script>// Define global variable
+IconifyProviders = {
+  // Empty prefix: overwrite default API provider configuration
+  '': {
+    // Use custom API first, use Iconify public API as backup
+    resources: [
+        'https://api.iconify.design',
+    ],
+    // Wait for 1 second before switching API hosts
+    rotate: 1000,
+  },
+};</script><script defer src="https://fastly.jsdelivr.net/npm/animejs@latest"></script><script defer src="/js/ui/fireworks.js" type="module"></script><canvas class="fireworks"></canvas><div class="container"><a class="sidebar-toggle hty-icon-button" id="menu-btn"><div class="hamburger hamburger--spin" type="button"><span class="hamburger-box"><span class="hamburger-inner"></span></span></div></a><div class="sidebar-toggle sidebar-overlay"></div><aside class="sidebar"><script src="/js/sidebar.js" type="module"></script><ul class="sidebar-nav"><li class="sidebar-nav-item sidebar-nav-toc hty-icon-button sidebar-nav-active" data-target="post-toc-wrap" title="文章目录"><span class="icon iconify" data-icon="ri:list-ordered"></span></li><li class="sidebar-nav-item sidebar-nav-overview hty-icon-button" data-target="site-overview-wrap" title="站点概览"><span class="icon iconify" data-icon="ri:passport-line"></span></li></ul><div class="sidebar-panel" id="site-overview-wrap"><div class="site-info fix-top"><a class="site-author-avatar" href="/about/" title="Cuican Li"><img width="96" loading="lazy" src="/images/avatar.jpg" alt="Cuican Li"><span class="site-author-status" title="我offer呢">❓︎</span></a><div class="site-author-name"><a href="/about/">Cuican Li</a></div><span class="site-name">Hexo</span><sub class="site-subtitle"></sub><div class="site-description"></div></div><nav class="site-state"><a class="site-state-item hty-icon-button icon-home" href="/" title="我的主页"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:home-4-line"></span></span></a><div class="site-state-item"><a href="/archives/" title="归档"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:archive-line"></span></span><span class="site-state-item-count">13</span></a></div><div class="site-state-item"><a href="/categories/" title="分类"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:folder-2-line"></span></span><span class="site-state-item-count">4</span></a></div><div class="site-state-item"><a href="/tags/" title="标签"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:price-tag-3-line"></span></span><span class="site-state-item-count">6</span></a></div><a class="site-state-item hty-icon-button" href="/about/#comment" title="留言板"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:clipboard-line"></span></span></a></nav><hr style="margin-bottom:0.5rem"><div class="links-of-author"><a class="links-of-author-item hty-icon-button" rel="noopener" href="https://github.com/yunmoya" title="GitHub" target="_blank" style="color:#6e5494"><span class="icon iconify" data-icon="ri:github-line"></span></a><a class="links-of-author-item hty-icon-button" rel="noopener" href="mailto:li_cuican@163.com" title="E-Mail" target="_blank" style="color:#8E71C1"><span class="icon iconify" data-icon="ri:mail-line"></span></a></div><hr style="margin:0.5rem 1rem"><div class="links"><a class="links-item hty-icon-button" href="/links/" title="我的小伙伴们" style="color:dodgerblue"><span class="icon iconify" data-icon="ri:genderless-line"></span></a></div><br><a class="links-item hty-icon-button" id="toggle-mode-btn" href="javascript:;" title="Mode" style="color: #f1cb64"><span class="icon iconify" data-icon="ri:contrast-2-line"></span></a></div><div class="sidebar-panel sidebar-panel-active" id="post-toc-wrap"><div class="post-toc"><div class="post-toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">虚拟机概述</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%88%86%E7%B1%BB"><span class="toc-number">1.1.</span> <span class="toc-text">虚拟机分类</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#JVM"><span class="toc-number">1.2.</span> <span class="toc-text">JVM</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#JVM-%E8%B7%A8%E8%AF%AD%E8%A8%80%E8%99%9A%E6%8B%9F%E6%9C%BA%EF%BC%8C%E7%94%A8%E4%BA%8E%E6%89%A7%E8%A1%8C%E5%AD%97%E8%8A%82%E7%A0%81%E3%80%82"><span class="toc-number">1.2.1.</span> <span class="toc-text">JVM:跨语言虚拟机，用于执行字节码。</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JVM%E7%89%B9%E7%82%B9"><span class="toc-number">1.2.2.</span> <span class="toc-text">JVM特点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JVM%E4%BD%8D%E7%BD%AE"><span class="toc-number">1.2.3.</span> <span class="toc-text">JVM位置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%99%A5JVM%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84"><span class="toc-number">1.2.4.</span> <span class="toc-text">♥JVM整体结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JVM%E6%9E%B6%E6%9E%84%E6%A8%A1%E5%9E%8B"><span class="toc-number">1.2.5.</span> <span class="toc-text">JVM架构模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JVM%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F"><span class="toc-number">1.2.6.</span> <span class="toc-text">JVM生命周期</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JVM%E5%8F%91%E5%B1%95%E5%8E%86%E7%A8%8B"><span class="toc-number">1.2.7.</span> <span class="toc-text">JVM发展历程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java%E4%BB%A3%E7%A0%81%E7%9A%84%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="toc-number">1.3.</span> <span class="toc-text">Java代码的执行流程</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AD%97%E8%8A%82%E7%A0%81%E6%96%87%E4%BB%B6-x2F-%E7%B1%BB%E6%96%87%E4%BB%B6"><span class="toc-number">2.</span> <span class="toc-text">字节码文件&#x2F;类文件</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84"><span class="toc-number">2.1.</span> <span class="toc-text">类文件结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AD%94%E6%95%B0-magic"><span class="toc-number">2.1.1.</span> <span class="toc-text">魔数(magic)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%88%E6%9C%AC"><span class="toc-number">2.1.2.</span> <span class="toc-text">版本</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B8%B8%E9%87%8F%E6%B1%A0"><span class="toc-number">2.1.3.</span> <span class="toc-text">常量池</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BF%E9%97%AE%E6%A0%87%E8%AF%86%E5%92%8C%E7%BB%A7%E6%89%BF%E4%BF%A1%E6%81%AF"><span class="toc-number">2.1.4.</span> <span class="toc-text">访问标识和继承信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%98%E9%87%8F%EF%BC%88Field%EF%BC%89%E4%BF%A1%E6%81%AF"><span class="toc-number">2.1.5.</span> <span class="toc-text">变量（Field）信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E4%BF%A1%E6%81%AF"><span class="toc-number">2.1.6.</span> <span class="toc-text">方法信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%99%84%E5%8A%A0%E5%B1%9E%E6%80%A7"><span class="toc-number">2.1.7.</span> <span class="toc-text">附加属性</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AD%97%E8%8A%82%E7%A0%81%E6%8C%87%E4%BB%A4"><span class="toc-number">3.</span> <span class="toc-text">字节码指令</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%99%A5%E8%BF%90%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="toc-number">3.1.</span> <span class="toc-text">♥运行流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%97%E8%8A%82%E7%A0%81%E6%8C%87%E4%BB%A4-1"><span class="toc-number">3.1.1.</span> <span class="toc-text">字节码指令</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%84%E9%80%A0%E6%96%B9%E6%B3%95"><span class="toc-number">3.1.2.</span> <span class="toc-text">构造方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E8%B0%83%E7%94%A8"><span class="toc-number">3.1.3.</span> <span class="toc-text">方法调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%9A%E6%80%81%E7%9A%84%E5%8E%9F%E7%90%86-invokevirtual"><span class="toc-number">3.1.4.</span> <span class="toc-text">多态的原理 invokevirtual</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#HSDB%E5%B7%A5%E5%85%B7"><span class="toc-number">3.1.4.1.</span> <span class="toc-text">HSDB工具</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%99%9A%E6%96%B9%E6%B3%95%E8%A1%A8vtable"><span class="toc-number">3.1.4.2.</span> <span class="toc-text">虚方法表vtable</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A4%9A%E6%80%81%E6%9F%A5%E6%89%BE%E8%BF%87%E7%A8%8B"><span class="toc-number">3.1.4.3.</span> <span class="toc-text">多态查找过程</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%82%E5%B8%B8%E5%A4%84%E7%90%86"><span class="toc-number">3.1.5.</span> <span class="toc-text">异常处理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BC%82%E5%B8%B8%E8%A1%A8-Exception-Table"><span class="toc-number">3.1.5.1.</span> <span class="toc-text">异常表 Exception Table</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#finally"><span class="toc-number">3.1.5.2.</span> <span class="toc-text">finally</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#synchronized"><span class="toc-number">3.1.6.</span> <span class="toc-text">synchronized</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%96%E8%AF%91%E5%99%A8%E5%A4%84%E7%90%86%EF%BC%88%E8%AF%AD%E6%B3%95%E7%B3%96%EF%BC%89"><span class="toc-number">3.2.</span> <span class="toc-text">编译器处理（语法糖）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%BB%98%E8%AE%A4%E6%9E%84%E9%80%A0%E5%99%A8"><span class="toc-number">3.2.1.</span> <span class="toc-text">默认构造器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%87%AA%E5%8A%A8%E6%8B%86%E8%A3%85%E7%AE%B1%EF%BC%88JDK5%E5%8F%8A%E4%BB%A5%E5%90%8E%EF%BC%89"><span class="toc-number">3.2.2.</span> <span class="toc-text">自动拆装箱（JDK5及以后）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B3%9B%E5%9E%8B%E9%9B%86%E5%90%88%E5%8F%96%E5%80%BC%EF%BC%88JDK5%E5%8F%8A%E4%BB%A5%E5%90%8E%EF%BC%89"><span class="toc-number">3.2.3.</span> <span class="toc-text">泛型集合取值（JDK5及以后）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%AF%E5%8F%98%E5%8F%82%E6%95%B0%EF%BC%88JDK5%E5%8F%8A%E4%BB%A5%E5%90%8E%EF%BC%89"><span class="toc-number">3.2.3.1.</span> <span class="toc-text">可变参数（JDK5及以后）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#foreach%EF%BC%88JDK5%E5%8F%8A%E4%BB%A5%E5%90%8E%EF%BC%89"><span class="toc-number">3.2.3.2.</span> <span class="toc-text">foreach（JDK5及以后）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#switch%E5%AD%97%E7%AC%A6%E4%B8%B2%EF%BC%88JDK7%E5%8F%8A%E4%BB%A5%E5%90%8E%EF%BC%89"><span class="toc-number">3.2.3.3.</span> <span class="toc-text">switch字符串（JDK7及以后）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#switch%E6%9E%9A%E4%B8%BE%E7%B1%BB%EF%BC%88JDK7%E5%8F%8A%E4%BB%A5%E5%90%8E%EF%BC%89"><span class="toc-number">3.2.3.4.</span> <span class="toc-text">switch枚举类（JDK7及以后）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9E%9A%E4%B8%BE%E7%B1%BB%EF%BC%88JDK7%E5%8F%8A%E4%BB%A5%E5%90%8E%EF%BC%89"><span class="toc-number">3.2.3.5.</span> <span class="toc-text">枚举类（JDK7及以后）</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E5%AD%90%E7%B3%BB%E7%BB%9F"><span class="toc-number">4.</span> <span class="toc-text">类加载器子系统</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%9C%E7%94%A8"><span class="toc-number">4.1.</span> <span class="toc-text">作用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%9D%A4%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B"><span class="toc-number">4.2.</span> <span class="toc-text">❤加载过程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%A0%E8%BD%BD%EF%BC%88Loading%EF%BC%89"><span class="toc-number">4.2.1.</span> <span class="toc-text">加载（Loading）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%93%BE%E6%8E%A5%EF%BC%88Linking"><span class="toc-number">4.2.2.</span> <span class="toc-text">链接（Linking)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96%EF%BC%88Initialization%EF%BC%89"><span class="toc-number">4.2.3.</span> <span class="toc-text">初始化（Initialization）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8"><span class="toc-number">4.3.</span> <span class="toc-text">类加载器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%9D%A4%E5%88%86%E7%B1%BB"><span class="toc-number">4.3.1.</span> <span class="toc-text">❤分类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%9D%A4%E5%BC%95%E5%AF%BC%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8"><span class="toc-number">4.3.2.</span> <span class="toc-text">❤引导类加载器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%9D%A4%E6%89%A9%E5%B1%95%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8"><span class="toc-number">4.3.3.</span> <span class="toc-text">❤扩展类加载器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%9D%A4%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%EF%BC%88%E7%B3%BB%E7%BB%9F%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%EF%BC%89"><span class="toc-number">4.3.4.</span> <span class="toc-text">❤应用程序类加载器（系统类加载器）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%94%A8%E6%88%B7%E8%87%AA%E5%AE%9A%E4%B9%89%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8"><span class="toc-number">4.3.5.</span> <span class="toc-text">用户自定义类加载器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ClassLoader%E7%B1%BB"><span class="toc-number">4.3.6.</span> <span class="toc-text">ClassLoader类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E2%9D%A4%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%9C%BA%E5%88%B6"><span class="toc-number">4.3.7.</span> <span class="toc-text">❤双亲委派机制</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">4.3.7.1.</span> <span class="toc-text">工作原理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BC%98%E5%8A%BF"><span class="toc-number">4.3.7.2.</span> <span class="toc-text">优势</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B2%99%E7%AE%B1%E5%AE%89%E5%85%A8%E6%9C%BA%E5%88%B6"><span class="toc-number">4.3.7.3.</span> <span class="toc-text">沙箱安全机制</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B6%E4%BB%96"><span class="toc-number">4.3.8.</span> <span class="toc-text">其他</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%9C%A8JVM%E4%B8%AD%E4%B8%A4%E4%B8%AAclass%E5%AF%B9%E8%B1%A1%E6%98%AF%E5%90%A6%E4%B8%BA%E5%90%8C%E4%B8%80%E4%B8%AA%E7%B1%BB%E7%9A%84%E4%B8%A4%E4%B8%AA%E5%BF%85%E8%A6%81%E6%9D%A1%E4%BB%B6"><span class="toc-number">4.3.8.1.</span> <span class="toc-text">在JVM中两个class对象是否为同一个类的两个必要条件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AF%B9%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E7%9A%84%E5%BC%95%E7%94%A8"><span class="toc-number">4.3.8.2.</span> <span class="toc-text">对类加载器的引用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%B1%BB%E7%9A%84%E4%B8%BB%E5%8A%A8%E4%BD%BF%E7%94%A8%E5%92%8C%E8%A2%AB%E5%8A%A8%E4%BD%BF%E7%94%A8"><span class="toc-number">4.3.8.3.</span> <span class="toc-text">类的主动使用和被动使用</span></a></li></ol></li></ol></li></ol></li></ol></div></div></div></aside><main class="sidebar-translate" id="content"><div id="post"><article class="hty-card post-block" itemscope itemtype="https://schema.org/Article" style="--smc-primary:#0078E7;"><link itemprop="mainEntityOfPage" href="http://cuican.life/2022/09/10/0904-jvm/"><span hidden itemprop="author" itemscope itemtype="https://schema.org/Person"><meta itemprop="name" content="Cuican Li"><meta itemprop="description"></span><span hidden itemprop="publisher" itemscope itemtype="https://schema.org/Organization"><meta itemprop="name" content="Hexo"></span><header class="post-header"><h1 class="post-title" itemprop="name headline">【知识记录】JVM知识记录（上）<a class="post-edit-link" href="https://github.com/YunYouJun/yunyoujun.github.io/tree/hexo/source/_posts/0904-jvm.md" target="_blank" title="编辑" rel="noopener"><span class="icon iconify" data-icon="ri:edit-line"></span></a></h1><div class="post-meta"><div class="post-time"><span class="post-meta-item-icon"><span class="icon iconify" data-icon="ri:calendar-line"></span></span> <time title="创建时间：2022-09-10 22:43:37" itemprop="dateCreated datePublished" datetime="2022-09-10T22:43:37+08:00">2022-09-10</time><span class="post-meta-divider">-</span><span class="post-meta-item-icon"><span class="icon iconify" data-icon="ri:calendar-2-line"></span></span> <time title="修改时间：2022-09-26 23:52:30" itemprop="dateModified" datetime="2022-09-26T23:52:30+08:00">2022-09-26</time></div><span class="leancloud_visitors" id="/2022/09/10/0904-jvm/" data-flag-title="【知识记录】JVM知识记录（上）"><span class="post-meta-divider">-</span><span class="post-meta-item-icon" title="阅读次数"><span class="icon iconify" data-icon="ri:eye-line"></span> <span class="leancloud-visitors-count"></span></span></span><span class="post-meta-divider">-</span><a href="#comment"><span class="post-meta-item-icon" title="评论数"><span class="icon iconify" data-icon="ri:chat-3-line"></span> <span class="waline-comment-count" id="/2022/09/10/0904-jvm/"></span></span></a><div class="post-classify"><span class="post-category"> <span class="post-meta-item-icon" style="margin-right:3px;"><span class="icon iconify" data-icon="ri:folder-line"></span></span><span itemprop="about" itemscope itemtype="https://schema.org/Thing"><a class="category-item" href="/categories/%E7%9F%A5%E8%AF%86/" style="--text-color:#fedd89" itemprop="url" rel="index"><span itemprop="text">知识</span></a></span></span><span class="post-tag"><span class="post-meta-divider">-</span><a class="tag-item" href="/tags/%E5%90%8E%E7%AB%AF/" style="--text-color:#fedd89"><span class="post-meta-item-icon"><span class="icon iconify" data-icon="ri:price-tag-3-line"></span></span><span class="tag-name">后端</span></a></span></div></div></header><section class="post-body" itemprop="articleBody"><div class="post-content markdown-body"><h1 id="虚拟机概述"><a href="#虚拟机概述" class="headerlink" title="虚拟机概述"></a>虚拟机概述</h1><h2 id="虚拟机分类"><a href="#虚拟机分类" class="headerlink" title="虚拟机分类"></a>虚拟机分类</h2><p>系统虚拟机（VMware等)和程序虚拟机（Java虚拟机）<br>系统虚拟机：对物理计算机的仿真，提供可运行完整OS的软件平台。<br>程序虚拟机：专门为执行单个计算机程序而设计。</p>
+<h2 id="JVM"><a href="#JVM" class="headerlink" title="JVM"></a>JVM</h2><h3 id="JVM-跨语言虚拟机，用于执行字节码。"><a href="#JVM-跨语言虚拟机，用于执行字节码。" class="headerlink" title="JVM:跨语言虚拟机，用于执行字节码。"></a>JVM:跨语言虚拟机，用于执行字节码。</h3><p>只要编译的字节码文件符合字节码规范，都可使用JVM。因此java字节码也可以称为<strong>JVM字节码</strong>。<br><img src="/../images/knowledge/jvm/JVM%E8%B7%A8%E8%AF%AD%E8%A8%80%E5%B9%B3%E5%8F%B0.png" alt="JVM跨语言平台" title="JVM跨语言平台" loading="lazy"></p>
+<h3 id="JVM特点"><a href="#JVM特点" class="headerlink" title="JVM特点"></a>JVM特点</h3><ul>
+<li>一次编译，到处运行</li>
+<li>自动内存管理</li>
+<li>自动垃圾回收功能</li>
+</ul>
+<h3 id="JVM位置"><a href="#JVM位置" class="headerlink" title="JVM位置"></a>JVM位置</h3><p><img src="/../images/knowledge/jvm/JVM%E4%BD%8D%E7%BD%AE.png" alt="JVM位置" title="JVM位置" loading="lazy"></p>
+<h3 id="♥JVM整体结构"><a href="#♥JVM整体结构" class="headerlink" title="♥JVM整体结构"></a>♥JVM整体结构</h3><p>整体结构需要会画<br>HotSpot虚拟机内存结构图如下：<br><img src="/../images/knowledge/jvm/JVM%E7%BB%93%E6%9E%84.png" alt="JVM结构" title="JVM结构" loading="lazy"></p>
+<h3 id="JVM架构模型"><a href="#JVM架构模型" class="headerlink" title="JVM架构模型"></a>JVM架构模型</h3><p>HotSpot是基于<strong>栈的指令集架构</strong>  </p>
+<ul>
+<li>基于栈的指令集架构  <ul>
+<li>设计实现简单 适用于资源受限系统</li>
+<li>避开寄存器分配难题</li>
+<li>指令大部分是零地址指令，其执行过程依赖于栈，<strong>指令集小（但指令多）</strong>，编译器容易实现</li>
+<li>不需要硬件支持，<strong>可移植性好</strong></li>
+<li><strong>执行性能比寄存器差</strong></li>
+</ul>
+</li>
+<li>基于寄存器的方式<ul>
+<li>典型应用：x86二进制指令集：传统PC、安卓的Davlik虚拟机</li>
+<li>性能优秀，执行高效</li>
+<li>指令集架构完全依赖硬件，可移植性差</li>
+<li>花费更少的指令完成一项操作</li>
+<li>以一地址指令、二地址指令、三地址指令为主</li>
+</ul>
+</li>
+</ul>
+<h3 id="JVM生命周期"><a href="#JVM生命周期" class="headerlink" title="JVM生命周期"></a>JVM生命周期</h3><p><strong>启动-&gt;执行-&gt;退出</strong></p>
+<ol>
+<li>虚拟机的启动<br>通过引导类加载器创建一个初始类（init class）来完成的，这个类是由虚拟机的具体实现指定的。<br><em>ps:用户自定义类加载器-&gt;系统类加载器-&gt;扩展类加载器-&gt;引导类加载器</em></li>
+<li>虚拟机的执行<br>程序开始执行时才运行，程序结束时他就停止<br><strong>执行一个Java程序的时候，真正执行的是一个叫做Java虚拟机的进程</strong></li>
+<li>虚拟机的退出<br>退出情况：正常结束、异常终止、OS错误导致JVM进程终止、Java代码中主动结束（exit()、halt())</li>
+</ol>
+<h3 id="JVM发展历程"><a href="#JVM发展历程" class="headerlink" title="JVM发展历程"></a>JVM发展历程</h3><ol>
+<li>Sun Classic VM  <ul>
+<li>第一款商用虚拟机、1.4淘汰</li>
+<li>只提供解释器没有JIT即时编译器（效率低）</li>
+<li>JIT编译器可以外挂但不能和解释器同时使用</li>
+</ul>
+</li>
+<li>Exact VM  <ul>
+<li>准确式内存管理（Exact Memory Management):<br> VM可以知道内存中某个位置的数据具体是什么类型（数据还是地址）  </li>
+<li>编译器和解释器可以混合工作、可以热点探测</li>
+<li>只在Solaris平台短暂使用，其他平台还是Sun Classic VM</li>
+</ul>
+</li>
+<li><strong>HotSpot VM</strong> <ul>
+<li>有影响力的三大商用虚拟机之一</li>
+<li>JDK6和JDK8的默认虚拟机、Sun/Oracle JDK和OpenJDK的默认虚拟机  </li>
+<li>方法区概念只有HotSpot有  </li>
+<li>HotSpot指的是热点代码探测技术  <ul>
+<li>通过计数器找到最具编译价值的代码，触发即时编译或栈上替换</li>
+<li>通过编译器和解释器协同工作，在最优化的程序时间与最佳执行性能中取得平衡</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>JRockit（BEA）</strong><ul>
+<li>专注于服务器端应用，内部不包含解释器</li>
+<li>世界上最快的JVM</li>
+<li>BEA已被Oracle收购</li>
+<li>有影响力的三大商用虚拟机之一</li>
+</ul>
+</li>
+<li><strong>J9（IBM）</strong><ul>
+<li>定位与HotSpot接近</li>
+<li>有影响力的三大商用虚拟机之一</li>
+<li>广泛用于IBM的各种Java产品</li>
+</ul>
+</li>
+<li>Azul VM<ul>
+<li>高性能虚拟机</li>
+<li>前三个“高性能JVM”使用在通用硬件平台</li>
+<li>Azul VM与特定硬件平台绑定、软硬件配合的专有虚拟机</li>
+</ul>
+</li>
+<li>Liquid VM<ul>
+<li>高性能虚拟机</li>
+<li>不需要OS支持，它本身实现了一个专用OS的必要功能</li>
+<li>直接运行在BEA的Hypervisor系统上，已暂停研发</li>
+</ul>
+</li>
+<li>Apache Harmony<ul>
+<li>其Java类库代码吸纳进了Android SDK</li>
+</ul>
+</li>
+<li>Microsoft JVM<ul>
+<li>在IE3浏览器支持Java Applets</li>
+<li>已终止，换成HotSpot了</li>
+</ul>
+</li>
+<li>Taobao JVM<ul>
+<li>基于OpenJDK开发了自己的定制版本AlibabaJDK</li>
+<li>对象能够在多个Java虚拟机进程中实现共享</li>
+</ul>
+</li>
+<li>Dalvik VM<ul>
+<li>安卓5.0之前支持的，非Java虚拟机，没有遵循Java虚拟机规范</li>
+<li>使用基于寄存器的指令集结构</li>
+</ul>
+</li>
+<li>Graal VM<ul>
+<li>Oracle研发</li>
+<li>跨语言全栈虚拟机（Java\C\C++\R\Python …..)</li>
+<li>有可能取代HotSpot</li>
+</ul>
+</li>
+</ol>
+<h2 id="Java代码的执行流程"><a href="#Java代码的执行流程" class="headerlink" title="Java代码的执行流程"></a>Java代码的执行流程</h2><p>翻译字节码（解释器）：针对字节码指令进行解释执行，保证响应时间<br>JIT编译器：把字节码中的热点代码编译成机器指令并缓存，负责执行的性能。<br><img src="/../images/knowledge/jvm/Java%E7%A8%8B%E5%BA%8F%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B.png" alt="Java代码执行流程" title="Java代码执行流程" loading="lazy"></p>
+<h1 id="字节码文件-x2F-类文件"><a href="#字节码文件-x2F-类文件" class="headerlink" title="字节码文件/类文件"></a>字节码文件/类文件</h1><h2 id="类文件结构"><a href="#类文件结构" class="headerlink" title="类文件结构"></a>类文件结构</h2><p>16进制，是紧凑的，一行16字节<br>JVM规范：</p>
+<pre><code>ClassFile{
+    u4（前四个字节） 魔数(magic)
+    u2（接下来的两个字节） 小版本号
+    u2 主版本号
+    后边还有常量池、访问标志（公共私有之类的）、包名、类名、父类、接口、成员变量、方法、附加属性信息
+}
+</code></pre>
+<h3 id="魔数-magic"><a href="#魔数-magic" class="headerlink" title="魔数(magic)"></a>魔数(magic)</h3><p>0~3字节，用来标识文件类型<br>java文件的魔数为cafebabe</p>
+<h3 id="版本"><a href="#版本" class="headerlink" title="版本"></a>版本</h3><p>4~7字节，表示类的版本</p>
+<ul>
+<li>4~5 小版本 Java中为00 00</li>
+<li>6~7 主版本<br>00 34（52）表示Java8<br><em>由此可知0033是Java7</em></li>
+</ul>
+<h3 id="常量池"><a href="#常量池" class="headerlink" title="常量池"></a>常量池</h3><ul>
+<li>8<del>9字节表示常量池长度<br>如00 23（35）表示常量池有#1</del>#34项，注意#0项不计入，也没有值</li>
+<li>查表</li>
+</ul>
+<h3 id="访问标识和继承信息"><a href="#访问标识和继承信息" class="headerlink" title="访问标识和继承信息"></a>访问标识和继承信息</h3><p>在常量池之后<br>前两个字节：访问标识<br>接下来两个字节：本类全限定名<br>接下来两个字节：父类全限定名<br>接下来两个字节：接口数量<br>（如果有接口的话后边跟着接口信息）</p>
+<h3 id="变量（Field）信息"><a href="#变量（Field）信息" class="headerlink" title="变量（Field）信息"></a>变量（Field）信息</h3><p>在访问标识和继承信息之后<br>前两个字节：变量个数<br>字节码文件会用简洁的字符表示类型信息，比较特殊的几个：</p>
+<pre><code>J  long
+L 类名 ;  类“类名”的引用
+Z  boolean 
+[  一维数组
+</code></pre>
+<h3 id="方法信息"><a href="#方法信息" class="headerlink" title="方法信息"></a>方法信息</h3><p>在变量信息之后<br>前两个字节：方法个数<br>方法结构：访问修饰符、名称、参数描述、方法属性数量、方法属性（比如Code属性就是方法要执行的代码）</p>
+<h3 id="附加属性"><a href="#附加属性" class="headerlink" title="附加属性"></a>附加属性</h3><p>比如源文件名称啥的</p>
+<h1 id="字节码指令"><a href="#字节码指令" class="headerlink" title="字节码指令"></a>字节码指令</h1><ul>
+<li>工具：javap 对class文件进行反编译<br>  参数：-v 显示字节码和常量池的信息<pre><code>javap -v xxx.class
+</code></pre>
+</li>
+</ul>
+<h2 id="♥运行流程"><a href="#♥运行流程" class="headerlink" title="♥运行流程"></a>♥运行流程</h2><p>原始java代码-&gt;编译后的字节码文件-&gt;常量池载入运行时常量池-&gt;方法字节码载入方法区-&gt;main线程开始运行，分配栈帧内存（LV表和操作数栈）-&gt;执行引擎开始执行字节码</p>
+<blockquote>
+<p>short（16位，-32768-32767）范围内的数据存储在字节码文件中，比short大的会存储在常量池中</p>
+</blockquote>
+<h3 id="字节码指令-1"><a href="#字节码指令-1" class="headerlink" title="字节码指令"></a>字节码指令</h3><ul>
+<li><p>压入操作数栈</p>
+<pre><code>bipush sipush ldc ldc2_w
+分别是将byte、short、int、long压入操作数栈
+
+注意：
+1. 一次压入四个字节，不够补齐，超出的话（long）压两次
+2. short范围内的数据和字节码在一块，超过的要去常量池中取
+   比如压入10为bipush 10，压入65535为ldc #3，然后去常量池找#3的数据压入
+3. 具体使用哪条指令按照数字在哪个范围内决定，比如int a = 100用的是bipush 100
+4. -1~5的常数赋值操作，直接用iconst_x，如int a = -1用的是iconst_m1， int a = 2用的是iconst_2
+</code></pre>
+</li>
+<li><p>将操作数栈顶数据弹出，存入局部变量表的slot x中</p>
+<pre><code>istore_x
+
+如：istore_2 就是把数据存入slot 2中
+</code></pre>
+</li>
+<li><p>将局部变量表的slot x的值存入操作数栈中</p>
+<pre><code>iload_x
+
+如：iload_2 就是把LV表slot 2中的数据加载到操作数栈中
+</code></pre>
+</li>
+<li><p>弹出操作数栈中的两个变量，计算后把结果压入栈</p>
+<pre><code>iadd
+</code></pre>
+</li>
+<li><p>在<strong>局部变量slot x</strong>上进行自增n操作</p>
+<pre><code>iinc x, n
+
+如iinc 1,1就是将LV表slot 1中的数字自增1
+i --其实就是iinc x,-1
+i += 10其实就是iinc x,10
+</code></pre>
+<blockquote>
+<p><strong>a++和++a的区别在于先执行iinc还是iload</strong><br>  a++是先执行iload</p>
+</blockquote>
+</li>
+<li><p>从常量池中根据地址去堆中找到一个成员变量的引用，找到后把引用压入操作数栈</p>
+<pre><code>getstatic 常量池序号
+
+如getstatic #4
+</code></pre>
+</li>
+<li><p>条件判断指令，指令后接着一个跳转行号作为参数</p>
+<pre><code>与0比较：ifeq ifne iflt ifgt...
+与int比较：if_icmpeq if_icmplt... byte\char\short都是这个
+float：fcmp
+long：lcmp
+double：dcmp
+与引用比较：if_acmpeq ifacmne
+!= null：ifnonnull
+
+如： ifne 12 不等于0跳转到12行
+</code></pre>
+<p>  跳转操作：</p>
+<pre><code>goto 行号
+</code></pre>
+</li>
+<li><p>循环控制指令<br>  执行到最后利用<code>goto</code>跳转回循环的第一条字节码指令（do-while的话是跳转到循环体的第一条字节码指令，for和while是跳转到判断条件的第一条字节码指令，for的自增操作在跳转之前执行）</p>
+</li>
+<li><p>从常量池中根据地址去方法区找到需调用的方法，生成新的栈帧，传递参数，开始执行新栈帧中的字节码</p>
+<pre><code>invokevirtual 常量池编号
+
+如invokevirtual #5
+</code></pre>
+</li>
+<li><p>完成方法调用，弹出栈帧，无返回参数，程序结束</p>
+<pre><code>return
+</code></pre>
+</li>
+<li><p>❤经典面试题</p>
+<pre><code>int x = 0;
+x = x ++;
+System.out.println(x); //结果为0
+</code></pre>
+<p>  分析字节码指令可以看出，x = x++执行了下面几条指令</p>
+<pre><code>假设x在LV表槽位1
+iload_1 //0被加载到操作数栈
+iinc 1,1 //LV表中++，结果为1
+istore_1 //赋值操作使得操作数栈中的0覆盖掉了LV表中的1 
+</code></pre>
+</li>
+</ul>
+<h3 id="构造方法"><a href="#构造方法" class="headerlink" title="构造方法"></a>构造方法</h3><ul>
+<li>静态变量、代码块等赋值的代码会<strong>合并成一个特殊的方法</strong> <code> &lt;cint&gt;()V</code>进行初始化，<strong>是整个类的构造方法</strong></li>
+<li>普通成员变量的赋值、类中的初始化代码块和构造方法<strong>会合并成</strong><code>&lt;init&gt;()V</code>，其中<strong>构造方法总是放在最后</strong>，是<strong>类中一个对象的构造方法</strong></li>
+<li>指令<ul>
+<li><code>aload_0</code> 加载this引用</li>
+<li><code>putfield 成员变量名的常量池地址</code> 将操作数栈栈顶的值赋值给对应的成员变量<pre><code>举例：
+this.a = "s2"对应字节码如下：
+aload_0
+ldc #5 //&lt;-"s2" 将字符串s2加载到操作数栈中
+putfield #3 //-&gt;this.a 将字符串栈顶的s2赋值给this.a
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="方法调用"><a href="#方法调用" class="headerlink" title="方法调用"></a>方法调用</h3><ul>
+<li><p>构造方法、私有方法、标有final的方法(都是静态编译，提前确定的方法)</p>
+<pre><code>invokespecial
+</code></pre>
+<ul>
+<li>新建对象:<ol>
+<li>调用构造方法前，会有如下两条指令<pre><code>new 类名的常量池地址 //为对象分配内存，分配成功后把对象引用放入操作数栈
+dup //把栈顶的地址进行复制并压入栈
+</code></pre>
+</li>
+<li>之后根据栈顶引用调用<code>invokespecial</code>，执行构造方法（调用结束后将栈顶的引用会被清除掉）</li>
+<li><code>astore_x</code>将对象引用存入到LV表的slot x中</li>
+</ol>
+</li>
+</ul>
+</li>
+<li><p>普通public方法（因为可能会被重写，所以是动态绑定）</p>
+<pre><code>invokevirtual
+</code></pre>
+</li>
+<li><p>静态方法(都是静态编译，提前确定的方法)</p>
+<pre><code>invokestatic
+</code></pre>
+</li>
+</ul>
+<pre><code>举例：
+假设类A的对象a的引用存在LV表的slot 1中，执行
+a.test1(); //test1()为普通公共方法
+a.test2(); //test2()为静态方法
+A.test2();
+字节码指令如下：
+//调用普通公共方法部分a.test1();
+//final等方法除了将invokevirtual换成invokespecial外，其他一样
+aload_1
+invokevirtual #4 //Method test1:()V
+//调用静态方法部分a.test2();
+aload_1
+pop //静态方法不需要对象调用，因此把对象直接pop掉
+//调用静态方法部分A.test2();
+invokestatic #5 //Method test2:()V
+</code></pre>
+<h3 id="多态的原理-invokevirtual"><a href="#多态的原理-invokevirtual" class="headerlink" title="多态的原理 invokevirtual"></a>多态的原理 invokevirtual</h3><h4 id="HSDB工具"><a href="#HSDB工具" class="headerlink" title="HSDB工具"></a>HSDB工具</h4><p>用来查看类的信息<br>进入jdk安装目录，执行</p>
+<pre><code>java -cp .lib/sa-jdi.jar sun.jvm.hotspot.HSDB
+</code></pre>
+<p>根据进程ID连接相应进程</p>
+<h4 id="虚方法表vtable"><a href="#虚方法表vtable" class="headerlink" title="虚方法表vtable"></a>虚方法表vtable</h4><ul>
+<li>vtable在类加载中的链接阶段根据方法的重写规则生成</li>
+<li>类中所有支持重写的方法的入口地址在类的vtable中</li>
+<li>对象根据vtable确定调用哪个方法</li>
+</ul>
+<h4 id="多态查找过程"><a href="#多态查找过程" class="headerlink" title="多态查找过程"></a>多态查找过程</h4><p>当执行invokevirtual指令时，</p>
+<ol>
+<li>先通过栈帧中的对象引用找到对象</li>
+<li>分析对象头，找到对象的实际Class</li>
+<li>在Class中找到vtable</li>
+<li>查vtable得到方法的具体地址</li>
+<li>执行方法的字节码</li>
+</ol>
+<h3 id="异常处理"><a href="#异常处理" class="headerlink" title="异常处理"></a>异常处理</h3><ul>
+<li>若try中代码没有问题，会通过<code>goto</code>语句跳过异常处理</li>
+<li>若try中代码有问题，需要借助Exception Table进行处理</li>
+</ul>
+<h4 id="异常表-Exception-Table"><a href="#异常表-Exception-Table" class="headerlink" title="异常表 Exception Table"></a>异常表 Exception Table</h4><ul>
+<li><p>结构</p>
+<ul>
+<li>from：try代码块中起始位置（含头）</li>
+<li>to：try代码块中终止位置（不含尾，指向goto出现的位置） </li>
+<li>target：类型匹配成功会进入到target指向的行</li>
+<li>type：类型匹配，发生的异常是否是声明的异常</li>
+</ul>
+</li>
+<li><p>[from, to)是前闭后开的检测范围，一旦这个范围内的字节码执行出现异常，则通过type匹配异常类型，如果一致，进入target所指示的行号</p>
+</li>
+<li><p>多个catch块对应异常表中的多个条目，catch块中的变量可以在LV表中进行槽位复用（<em>因为作用域不相交</em>）</p>
+</li>
+<li><p>新语法multi-catch</p>
+<pre><code>    try{
+        ...
+    }catch(异常1 | 异常2 | 异常3)
+</code></pre>
+<p>  在异常表中会占3行，<strong>只有type不同</strong>，from、to、target均相同</p>
+</li>
+</ul>
+<h4 id="finally"><a href="#finally" class="headerlink" title="finally"></a>finally</h4><ul>
+<li>finally的字节码会分别在try块字节码、catch块字节码之后放一份</li>
+<li>异常表至少有三项，除普通异常外，还有两项用来匹配try块和异常块中的任意异常或错误，跳转至try-catch块结束后的位置执行finally中的代码，如图所示:<br>  <img src="/../images/knowledge/jvm/finally%E5%AD%97%E8%8A%82%E7%A0%81.png" alt="finally字节码" title="finally字节码" loading="lazy"></li>
+<li>❤面试题<ul>
+<li>return写在try和finally，返回结果以finally为准，try中的return也会执行，但只执行到了return里面的expression（比如<code>return a+b;</code>只执行<code>a+b</code>)，expression首先存放在操作数栈顶，然后复制到LV表，并没有执行返回语句return<ul>
+<li>如果在finally中写了return会吞掉异常字节码athrow，所以<strong>不要在finally中写return</strong></li>
+</ul>
+</li>
+<li>finally对返回值的影响，以下代码返回10，finally的赋值操作没有对return产生影响，因为try中return时会先把返回值缓存起来<pre><code>    int i = 10;
+    try{
+        return i; //字节码执行到此时会把i的值存入LV表以固定返回值
+    }finally{
+        i = 20; //虽然将i改为20，但是ireturn从LV表里取值，LV表里的仍为10
+    }
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="synchronized"><a href="#synchronized" class="headerlink" title="synchronized"></a>synchronized</h3><ul>
+<li>方法级别的synchronized不会在字节码指令中有所体现，会在修饰符中出现<code>ACC_SYNCHRONIZED</code></li>
+<li>代码块中的指令在<code>monitorenter</code>和<code>monitorexit</code>之间</li>
+<li>锁对象会复制一份（<code>dup</code>操作），一个和<code>monitorenter</code>配合，一个和<code>monitorexit</code>配合</li>
+</ul>
+<h2 id="编译器处理（语法糖）"><a href="#编译器处理（语法糖）" class="headerlink" title="编译器处理（语法糖）"></a>编译器处理（语法糖）</h2><p>语法糖：java编译器把*.java源码编译成*.class字节码的过程中，自动生成和转换的一些代码</p>
+<h3 id="默认构造器"><a href="#默认构造器" class="headerlink" title="默认构造器"></a>默认构造器</h3><p>如果没写无参构造器，<strong>编译器会自动生成无参构造器</strong></p>
+<h3 id="自动拆装箱（JDK5及以后）"><a href="#自动拆装箱（JDK5及以后）" class="headerlink" title="自动拆装箱（JDK5及以后）"></a>自动拆装箱（JDK5及以后）</h3><ul>
+<li>装箱：基本数据类型-&gt;包装类型 <pre><code>//JDK5之前
+// 注意：-128~127之间的整数会重用对象
+Integer x = Integer.valueOf(1);
+</code></pre>
+</li>
+<li>拆箱：包装类型-&gt;基本数据类型<pre><code>//JDK5之前
+int y = x.intValue;
+</code></pre>
+</li>
+</ul>
+<h3 id="泛型集合取值（JDK5及以后）"><a href="#泛型集合取值（JDK5及以后）" class="headerlink" title="泛型集合取值（JDK5及以后）"></a>泛型集合取值（JDK5及以后）</h3><p>泛型擦除：泛型信息在编译为字节码以后就消失了，实际类型都当做Object处理：</p>
+<pre><code>List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+list.add(10); //编译后实际调用的是list.add(Object e)
+Integer x = list.get(0); //编译后实际调用的是Object obj = List.get(0);
+</code></pre>
+<p>所以在取值后，编译器真正生成的字节码中，还要额外进行一个<strong>类型转换</strong>的操作：</p>
+<pre><code>Integer x = (Integer)list.get(0);
+//类型转换字节码
+checkcast xxx
+</code></pre>
+<p>擦除的是字节码上的泛型信息，<strong>LocalVariableTypeTable中仍然保留了方法参数泛型的信息</strong>，此部分泛型信息无法使用反射获取。<br>反射可以获取方法返回值和方法参数上的泛型信息：</p>
+<pre><code>Method test = xx.class.getMethod("method name", 参数类型.class);
+Type[] types = test.getGenericParameterTypes();//获取泛型信息
+...
+</code></pre>
+<h4 id="可变参数（JDK5及以后）"><a href="#可变参数（JDK5及以后）" class="headerlink" title="可变参数（JDK5及以后）"></a>可变参数（JDK5及以后）</h4><p>如：</p>
+<pre><code>public static void foo(String... args){
+    ...
+}
+public static void main(String[] args){
+    foo("hello", "world");
+}
+</code></pre>
+<p>编译后相当于</p>
+<pre><code>public static void foo(String[] args){
+    ...
+}
+public static void main(String[] args){
+    foo(new String[]{"hello", "world"});
+}
+</code></pre>
+<p>注意：调用无参的<code>foo()</code>会传一个空数组进去，而不会传null进去</p>
+<h4 id="foreach（JDK5及以后）"><a href="#foreach（JDK5及以后）" class="headerlink" title="foreach（JDK5及以后）"></a>foreach（JDK5及以后）</h4><p>数组：</p>
+<pre><code>int[] arrs = {1,2,3,4,5}; //语法糖1：数组赋初值的简化写法
+for(int arr : arrs){//语法糖2：foreach
+    ...
+}
+</code></pre>
+<p>编译后相当于</p>
+<pre><code>int[] arrs = new int[]{1,2,3,4,5};
+for(int i = 0; i &lt; arr.length; ++ i){
+    ...
+}
+</code></pre>
+<p><strong>集合</strong>编译后会转换为对<strong>迭代器</strong>的调用：</p>
+<pre><code>List&lt;Integer&gt; list = ...
+Iterator iter = list.iterator();
+while(it.hasNext()){
+    ...
+    Integer e = (Integer)iter.next();
+    ...
+}
+</code></pre>
+<h4 id="switch字符串（JDK7及以后）"><a href="#switch字符串（JDK7及以后）" class="headerlink" title="switch字符串（JDK7及以后）"></a>switch字符串（JDK7及以后）</h4><p>JDK7之后switch可以作用于字符串和枚举类：</p>
+<pre><code>switch(str){
+    case "hello": 
+        ...hello的操作...
+        break;
+    case "world": 
+        ...word的操作...
+        break;
+}
+</code></pre>
+<p>编译后变成了两个switch，匹配改变为<strong>匹配字符串的hashcode以及字符串本身</strong>：</p>
+<pre><code>byte x = -1;
+switch(str.hashCode()){
+    case 99162322: //hello的hashCode
+        if(str.equals("hello")){
+            x = 0;
+        }
+        break;
+    case 113318802: //world的hashCode
+        if(str.equals("world")){
+            x = 1;
+        }
+        break;
+    default:
+        switch(x){
+            case 0:
+                ...hello的操作...
+            case 1:
+                ...word的操作...
+        }
+}
+</code></pre>
+<h4 id="switch枚举类（JDK7及以后）"><a href="#switch枚举类（JDK7及以后）" class="headerlink" title="switch枚举类（JDK7及以后）"></a>switch枚举类（JDK7及以后）</h4><p>定义一个静态内部合成类（仅jvm使用，对我们不可见）用来映射枚举的ordinal与数组元素的关系。switch针对这个数组元素进行匹配。</p>
+<blockquote>
+<p>枚举的ordinal表示枚举对象的序号，从0开始。</p>
+</blockquote>
+<h4 id="枚举类（JDK7及以后）"><a href="#枚举类（JDK7及以后）" class="headerlink" title="枚举类（JDK7及以后）"></a>枚举类（JDK7及以后）</h4><p>编译后会生成一个final类<br><img src="/../images/knowledge/jvm/%E6%9E%9A%E4%B8%BE%E7%B1%BB.png" alt="&quot;转换后枚举类&quot;" title="转换后枚举类" loading="lazy"></p>
+<h1 id="类加载器子系统"><a href="#类加载器子系统" class="headerlink" title="类加载器子系统"></a>类加载器子系统</h1><p><img src="/../images/knowledge/jvm/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E6%95%B4%E4%BD%93%E7%BB%93%E6%9E%84.png" alt="类加载器整体结构" title="类加载器整体结构" loading="lazy"></p>
+<h2 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h2><ul>
+<li>负责从文件系统或网络中加载Class文件，class文件在文件开头有特定的文件标识</li>
+<li>只负责加载，<strong>是否能够运行由执行引擎决定</strong></li>
+<li>加载的<strong>类信息存放于一块称为方法区</strong>的内存空间。方法区还存放运行时常量池信息。</li>
+</ul>
+<h2 id="❤加载过程"><a href="#❤加载过程" class="headerlink" title="❤加载过程"></a>❤加载过程</h2><p>加载-&gt;链接（验证-&gt;准备-&gt;解析）-&gt;初始化<br><em>ps:此部分面试时应说清楚每个阶段的过程</em></p>
+<h3 id="加载（Loading）"><a href="#加载（Loading）" class="headerlink" title="加载（Loading）"></a>加载（Loading）</h3><ol>
+<li>通过一个类的全限定名获取定义<strong>此类的二进制字节流</strong></li>
+<li>将这个字节流所代表的<strong>静态存储结构转化为方法区的运行时数据结构</strong></li>
+<li><strong>在内存中生成一个代表这个类的java.lang.Class对象</strong>，作为方法区这个类的各种数据的访问入口</li>
+</ol>
+<h3 id="链接（Linking"><a href="#链接（Linking" class="headerlink" title="链接（Linking)"></a>链接（Linking)</h3><ol>
+<li>验证（verify）<ul>
+<li>目的：确保Class文件字节流中包含信息符合JVM要求，保证被加载类正确性，不危害JVM的自身安全<br> <em>如：java的class文件开头都是cafe babe</em></li>
+</ul>
+</li>
+<li>准备（prepare）<ul>
+<li><strong>为静态类变量（static定义的）分配一个默认初始值</strong><br>  这里<strong>不包含常量</strong>（final修饰的static），final在编译时就会分配了，准备阶段会显式初始化<br>  <strong>不会为实例变量分配初始化</strong></li>
+</ul>
+</li>
+<li>解析（resolve）<ul>
+<li>将常量池中的符号引用转换为直接引用</li>
+<li>在方法区中创建虚方法表</li>
+<li>符号引用：一组符号来描述所引用的目标</li>
+<li>直接引用：直接指向目标的指针<blockquote>
+<p><strong>虚方法表</strong>：为了提高性能，JVM在类的方法区建立一个虚方法表（非虚方法不需要）来实现。使用索引表代替以上查找过程。每个类中都有一个虚方法表，存放各个方法的实际入口。虚方法表会在类加载的链接阶段（具体在解析阶段）被创建并开始初始化，类的变量初始值准备完成后，JVM会把该类的方发表也初始化完毕。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ol>
+<h3 id="初始化（Initialization）"><a href="#初始化（Initialization）" class="headerlink" title="初始化（Initialization）"></a>初始化（Initialization）</h3><ol>
+<li>初始化阶段就是执行类构造器方法<code>&lt;cinit&gt;()</code>的过程  <ul>
+<li><code>&lt;cinit&gt;()</code>不需要自己定义，是java编译器自动收集类中的所有<strong>静态类变量的赋值动作和静态代码块中的语句</strong>合并起来<br> ps:要是没有这两块内容，就不会生成<code>&lt;cinit&gt;()</code></li>
+<li><code>&lt;cinit&gt;()</code>中的指令按语句在源文件中出现的顺序执行</li>
+<li>若有父类，会先执行父类的<code>&lt;cinit&gt;()</code>方法</li>
+<li>虚拟机必须保证一个类的<code>&lt;cinit&gt;()</code>方法在多线程下被<strong>同步加锁，保证方法只执行一次</strong></li>
+</ul>
+</li>
+<li>任何一个类声明以后，内部至少存在一个类的构造器，在此阶段表现为<code>&lt;init&gt;</code>方法</li>
+</ol>
+<h2 id="类加载器"><a href="#类加载器" class="headerlink" title="类加载器"></a>类加载器</h2><h3 id="❤分类"><a href="#❤分类" class="headerlink" title="❤分类"></a>❤分类</h3><ul>
+<li>引导类加载器  </li>
+<li>自定义类加载器<br>所有派生于抽象类ClassLoader的类加载器都划分为自定义类加载器<ul>
+<li>扩展类加载器<br>  上层为引导类加载器，在java中获取不到引导类加载器  </li>
+<li>系统类加载器<br>  上层为扩展类加载器</li>
+<li>用户自定义类加载器<br>  默认使用系统类加载器进行加载</li>
+</ul>
+</li>
+</ul>
+<h3 id="❤引导类加载器"><a href="#❤引导类加载器" class="headerlink" title="❤引导类加载器"></a>❤引导类加载器</h3><ul>
+<li>C/C++编写，嵌套在JVM内部，在java中获取该加载器会返回null</li>
+<li><strong>Java的核心类库都是使用引导类加载器进行加载的</strong></li>
+<li>没有父类加载器</li>
+<li>加载扩展类加载器和应用程序类加载器（系统加载器），并指定为他们的父类加载器</li>
+</ul>
+<h3 id="❤扩展类加载器"><a href="#❤扩展类加载器" class="headerlink" title="❤扩展类加载器"></a>❤扩展类加载器</h3><ul>
+<li>Java语言编写，ExtClassLoader实现</li>
+<li>派生于ClassLoader</li>
+<li>父类加载器为启动类加载器</li>
+<li>加载jre/lib/ext子目录下的类库。用户创建的JAR放在此目录下，也会自动由扩展类加载器加载</li>
+</ul>
+<h3 id="❤应用程序类加载器（系统类加载器）"><a href="#❤应用程序类加载器（系统类加载器）" class="headerlink" title="❤应用程序类加载器（系统类加载器）"></a>❤应用程序类加载器（系统类加载器）</h3><ul>
+<li>Java语言编写，APPClassLoader实现</li>
+<li>派生于ClassLoader</li>
+<li>父类加载器为扩展类加载器</li>
+<li>加载环境变量classpath或系统属性java.class.path指定路径下的类库</li>
+<li><strong>程序中默认的类加载器</strong></li>
+</ul>
+<h3 id="用户自定义类加载器"><a href="#用户自定义类加载器" class="headerlink" title="用户自定义类加载器"></a>用户自定义类加载器</h3><ul>
+<li>为什么使用？  <ul>
+<li>隔离加载类（避免引入了不同中间件后类冲突）（不同类加载器加载的类不能相互访问）</li>
+<li>修改类的加载方式</li>
+<li>扩展加载源</li>
+<li>防止源码泄露</li>
+</ul>
+</li>
+<li>步骤<ol>
+<li>继承抽象类ClassLoader</li>
+<li>jdk1.2后不再重写loadClass()，而是建议把自定义的类加载逻辑写在findClass(String fileName)中</li>
+<li>没有过于复杂的需求（加解密之类的）可以直接继承URLClassLoader</li>
+</ol>
+</li>
+</ul>
+<h3 id="ClassLoader类"><a href="#ClassLoader类" class="headerlink" title="ClassLoader类"></a>ClassLoader类</h3><ul>
+<li>获取<ul>
+<li>获取当前类的加载器：<br>   Class.forName(“当前类完整包名”).getClassLoader()</li>
+<li>获取当前线程上下文的类加载器：<br>  Thread.currentThread().getContextClassLoader()</li>
+<li>ClassLoader.getSystemClassLoader()</li>
+</ul>
+</li>
+</ul>
+<h3 id="❤双亲委派机制"><a href="#❤双亲委派机制" class="headerlink" title="❤双亲委派机制"></a>❤双亲委派机制</h3><p>Java虚拟机对class文件采用的是<strong>按需加载</strong>的方式，也就是说当需要使用该类时才会将它的class文件加载到内存生成class对象。而且<strong>加载某个类的class文件时，Java虚拟机采用的是双亲委派模式</strong>，即把请求交由父类处理，它是一种任务委派模式。 </p>
+<h4 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h4><ol>
+<li>一个类加载器收到了类加载请求，会先把这个请求委托给父类的加载器去执行，依次递归，请求最终将到达顶层的启动类加载器</li>
+<li>如果父类加载器可以完成类加载任务，就成功返回，倘若父类加载器无法完成此加载任务，子加载器才会尝试自己去加载<br><img src="https://jvm-lcc.oss-cn-beijing.aliyuncs.com/%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%BC%8F.png" alt="双亲委派模式" title="双亲委派模式" loading="lazy"></li>
+</ol>
+<h4 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h4><ul>
+<li>避免类的重复加载</li>
+<li>保护程序安全，防止核心API被随意篡改  <ul>
+<li><p>比如自己建一个java.lang包，里面写String，该类会被忽略，因为该机制会在引导类加载器中加载正确的String<br>  <img src="/../images/knowledge/jvm/%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%BC%8F%E5%AE%89%E5%85%A8%E6%8A%A5%E9%94%991.png" alt="双亲委派模式安全报错1" title="双亲委派模式安全报错1" loading="lazy"></p>
+</li>
+<li><p>又比如在java.lang包中写自定义类，运行会直接报错<br>  <img src="/../images/knowledge/jvm/%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%BC%8F%E5%AE%89%E5%85%A8%E6%8A%A5%E9%94%992.png" alt="双亲委派模式安全报错2" title="双亲委派模式安全报错2" loading="lazy"></p>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="沙箱安全机制"><a href="#沙箱安全机制" class="headerlink" title="沙箱安全机制"></a>沙箱安全机制</h4><p>自定义string类，但是在加载自定义string类的时候会率先使用引导类加载器加载，而引导类加载器在加载的过程中会先加载jdk自带的文件(rt.jar包中java \lang \string.class)，报错信息说没有main方法，就是因为加载的是rt.jar包中的string类。这样可以保证对java核心源代码的保护，这就是沙箱安全机制。</p>
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><h4 id="在JVM中两个class对象是否为同一个类的两个必要条件"><a href="#在JVM中两个class对象是否为同一个类的两个必要条件" class="headerlink" title="在JVM中两个class对象是否为同一个类的两个必要条件"></a>在JVM中两个class对象是否为同一个类的两个必要条件</h4><ul>
+<li>类的完整类名必须一致，包括包名</li>
+<li>加载这个类的类加载器必须相同</li>
+</ul>
+<h4 id="对类加载器的引用"><a href="#对类加载器的引用" class="headerlink" title="对类加载器的引用"></a>对类加载器的引用</h4><ul>
+<li>如果一个类是由用户类加载器加载的，JVM会将<strong>用户类加载器</strong>（<em>启动类加载器以外的所有加载器</em>）的一个引用作为类型信息的一部分保存在方法区中  </li>
+<li>当解析一个类型到另一个类型的引用时，JVM需要保证这两个类的加载器是相同的，因为不同类加载器加载的类之间是无法直接交互的。<blockquote>
+<p><strong>问题</strong>：我们能在自己写的类中访问到String对象，但String是由引导类加载器加载的，显然和我们自己的类用的不是同一个加载器，这不就说明不同类加载器加载的类之间是可以直接交互吗？<br>  <strong>答</strong>：否，加载器还有<strong>定义类加载器</strong>和<strong>初始类加载器</strong>两种，对于String类来说，它是通过我们自己写的类的加载器（即系统类加载器）进行加载，系统类加载器将它一路向上委托，最终由引导类加载器对它进行加载。因此引导类加载器是它的定义类加载器，委托路上的所有类加载器（系统类加载器、扩展类加载器、引导类加载器）都是它的初始类加载器，String类在这些类加载器的命名空间中均有出现，因此，我们能在自己写的类中访问到String对象。<br>  <strong>参考</strong>：<a target="_blank" rel="noopener" href="https://bbs.csdn.net/topics/300146816">https://bbs.csdn.net/topics/300146816</a></p>
+</blockquote>
+</li>
+</ul>
+<h4 id="类的主动使用和被动使用"><a href="#类的主动使用和被动使用" class="headerlink" title="类的主动使用和被动使用"></a>类的主动使用和被动使用</h4><p>区别在于：会不会导致<strong>类的初始化</strong>（注意是<code>&lt;cint&gt;</code>，不是对象的初始化<code>&lt;init&gt;</code>）<br>主动使用：</p>
+<ul>
+<li>创建类实例</li>
+<li>访问类或类或接口的静态变量,或者对该静态变量赋值</li>
+<li>调用类的静态方法</li>
+<li>初始化子类</li>
+<li>反射</li>
+<li>JVM启动时被标为启动类的类（如main）</li>
+<li>JDK 7开始提供的动态语言支持</li>
+</ul>
+<p>被动使用：除上面之外的其他使用属于被动使用</p>
+<ul>
+<li>通过子类访问父类的静态变量，子类没有被初始化</li>
+<li>通过数组定义类引用类，为类的被动使用，不会触发类的初始化<pre><code>MyClass[] arr = new MyClass[10];
+</code></pre>
+</li>
+<li>调用类的静态常量，常量在编译阶段会存入调用方法所在的类的常量池中，本质上没有直接引用到定义常量的类<br>  特殊情况：<pre><code>static final String s = UUID.randomUUID().toString(); 
+</code></pre>
+  该情况类会初始化，因为UUID.randomUUID().toString()这个方法，是运行期确认的，所以，这不是被动使用</li>
+</ul>
+<blockquote>
+<p>参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/billmiao/p/9872226.html">https://www.cnblogs.com/billmiao/p/9872226.html</a></p>
+</blockquote>
+</div></section><div id="reward-container"><span class="hty-icon-button button-glow" id="reward-button" title="打赏" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === &quot;none&quot;) ? &quot;block&quot; : &quot;none&quot;;"><span class="icon iconify" data-icon="ri:hand-coin-line"></span></span><div id="reward-comment">I'm so cute. Please give me money.</div></div><ul class="post-copyright"><li class="post-copyright-author"><strong>本文作者：</strong>Cuican Li</li><li class="post-copyright-link"><strong>本文链接：</strong><a href="http://cuican.life/2022/09/10/0904-jvm/" title="【知识记录】JVM知识记录（上）">http://cuican.life/2022/09/10/0904-jvm/</a></li><li class="post-copyright-license"><strong>版权声明：</strong>本博客所有文章除特别声明外，均默认采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" target="_blank" rel="noopener" title="CC BY-NC-SA 4.0 "><span class="icon iconify" data-icon="ri:creative-commons-line"></span><span class="icon iconify" data-icon="ri:creative-commons-by-line"></span><span class="icon iconify" data-icon="ri:creative-commons-nc-line"></span><span class="icon iconify" data-icon="ri:creative-commons-sa-line"></span></a> 许可协议。</li></ul></article><div class="post-nav"><div class="post-nav-item"><a class="post-nav-prev" href="/2022/09/21/0912-gosig/" rel="prev" title="【论文笔记】Gosig A Scalable and High-Performance Byzantine Consensus for Consortium Blockchains"><span class="icon iconify" data-icon="ri:arrow-left-s-line"></span><span class="post-nav-text">【论文笔记】Gosig A Scalable and High-Performance Byzantine Consensus for Consortium Blockchains</span></a></div><div class="post-nav-item"><a class="post-nav-next" href="/2022/08/29/0829-Blockchain-Based-Incentives/" rel="next" title="【论文笔记】Blockchain-Based Incentives for Secure and Collaborative Data Sharing in Multiple Clouds"><span class="post-nav-text">【论文笔记】Blockchain-Based Incentives for Secure and Collaborative Data Sharing in Multiple Clouds</span><span class="icon iconify" data-icon="ri:arrow-right-s-line"></span></a></div></div></div><div class="hty-card" id="comment"><div id="waline"></div><link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/@waline/client@v2/dist/waline.css"><script>window.CONFIG.waline.config.path = "/2022/09/10/0904-jvm/"</script><div class="js-Pjax"><script src="/js/comments/waline.js" type="module" defer></script></div></div></main><footer class="sidebar-translate" id="footer"><div class="copyright"><span>&copy; 2019 – 2023 </span><span class="with-love" id="animate"><span class="icon iconify" data-icon="ri:cloud-line"></span></span><span class="author"> Cuican Li</span></div><div class="powered"><span>由 <a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a> 驱动 v6.3.0</span><span class="footer-separator">|</span><span>主题 - <a rel="noopener" href="https://github.com/YunYouJun/hexo-theme-yun" target="_blank"><span>Yun</span></a> v1.10.9</span></div></footer></div><a class="hty-icon-button" id="back-to-top" aria-label="back-to-top" href="#"><span class="icon iconify" data-icon="ri:arrow-up-s-line"></span><svg class="progress-circle-container" viewBox="0 0 100 100"><circle class="progress-circle" id="progressCircle" cx="50" cy="50" r="48" fill="none" stroke="#0078E7" stroke-width="2" stroke-linecap="round"></circle></svg></a><a class="popup-trigger hty-icon-button icon-search" id="search" href="javascript:;" title="搜索"><span class="site-state-item-icon"><span class="icon iconify" data-icon="ri:search-line"></span></span></a><script>window.addEventListener("DOMContentLoaded", () => {
+  // Handle and trigger popup window
+  document.querySelector(".popup-trigger").addEventListener("click", () => {
+    document.querySelector(".popup").classList.add("show");
+    setTimeout(() => {
+      document.querySelector(".search-input").focus();
+    }, 100);
+  });
+
+  // Monitor main search box
+  const onPopupClose = () => {
+    document.querySelector(".popup").classList.remove("show");
+  };
+
+  document.querySelector(".popup-btn-close").addEventListener("click", () => {
+    onPopupClose();
+  });
+
+  window.addEventListener("keyup", event => {
+    if (event.key === "Escape") {
+      onPopupClose();
+    }
+  });
+});
+</script><script defer src="https://fastly.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script><script defer src="https://fastly.jsdelivr.net/npm/instantsearch.js@4/dist/instantsearch.production.min.js"></script><script defer src="/js/search/algolia-search.js" type="module"></script><div class="popup search-popup"><div class="search-header"><span class="popup-btn-close close-icon hty-icon-button"><span class="icon iconify" data-icon="ri:close-line"></span></span></div><div class="search-input-container"></div><div class="algolia-results"><div id="algolia-stats"></div><div id="algolia-hits"></div><div class="algolia-pagination" id="algolia-pagination"></div></div></div><script src="https://fastly.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js"></script><script>const images = [...document.querySelectorAll('.markdown-body img')]
+mediumZoom(images)</script><style>.medium-zoom-image {
+  z-index: 99;
+}</style></body></html>
